@@ -1,25 +1,27 @@
 function solvereservesmodel!(model::ReservesModel, policiesout::Bool=false, 
-								resiternum::Int64=0, itermax::Int64=6001, iterprint::Int64=10, intermediatesave::Int64=1000)
+								resiternum::Int64=0, itermax::Int64=6001, iterprint::Int64=25, intermediatesave::Int64=1000)
 	# Unpack counters
 	debtnum::Int64=model.compuparams.debtnum
 	resnum::Int64=model.compuparams.resnum
 	ynum::Int64=model.compuparams.ynum
+	regimenum::Int64=size(model.grids.regimetrans,1)
+	exonum::Int64=regimenum*ynum
 
 	# Holder for new value functions
-	newbondprice=SharedArray(Float64, debtnum, resnum, ynum, 2)
-	newvaluedefault=Array{Float64}(resnum, ynum, 2)
-	newvaluepay=SharedArray(Float64, debtnum, resnum, model.compuparams.mnum, ynum, 2)
+	newbondprice=SharedArray(Float64, debtnum, resnum, ynum, regimenum)
+	newvaluedefault=Array{Float64}(resnum, ynum, regimenum)
+	newvaluepay=SharedArray(Float64, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
 	# Also need to allocate policies in shared arrays
-	debtpolicy=SharedArray(Int64, debtnum, resnum, model.compuparams.mnum, ynum, 2)
-	reservespolicy=SharedArray(Int64, debtnum, resnum, model.compuparams.mnum, ynum, 2)
-	defaultpolicy=SharedArray(Bool, debtnum, resnum, model.compuparams.mnum, ynum, 2)
+	debtpolicy=SharedArray(Int64, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
+	reservespolicy=SharedArray(Int64, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
+	defaultpolicy=SharedArray(Bool, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
 
 	# initial values for error
 	valuegap::Float64=10.0*model.compuparams.valtol
 	pricegap::Float64=10.0*model.compuparams.valtol
 	defaultgap::Float64=10.0*model.compuparams.valtol
 	# Holder for exogenous expectation
-	expectedvaluepay=Array{Float64}(debtnum,resnum,ynum,2)
+	expectedvaluepay=Array{Float64}(debtnum,resnum,ynum,regimenum)
 	# Preallocate intermediate stages
 
 
@@ -29,12 +31,17 @@ function solvereservesmodel!(model::ReservesModel, policiesout::Bool=false,
 	broadcast!(+, defaultflowutility, -model.grids.reserves./(1+model.econparams.rfree), model.grids.reserves', reshape(model.grids.ydefault,1,1,ynum))
 	defaultflowutility[defaultflowutility.<0.0]=0.0
 	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1-model.econparams.ggamma).*(1-model.econparams.bbeta)
-	# Preallocation for default solver
-	interimvaluenom=Array{Float64}(debtnum,resnum,ynum,3)
-	interimdefaultvalue=Array{Float64}(resnum,ynum,2) 
+	# Preallocation of temporary arrays
+	tempdry=Array{Float64}(debtnum,resnum,ynum)
+	tempdryw=Array{Float64}(debtnum,resnum,ynum,regimenum)
+	
+	tempry=Array{Float64}(resnum,ynum) 
+	temprr=Array{Float64}(resnum, resnum)
+	tempryw=Array{Float64}(resnum,ynum,regimenum) 
+	
     reservesmaxtemp=Array{Float64}(1, resnum)
     reservesidtemp=Array{Int64}(1, resnum)
-    resrestemp=Array{Float64}(resnum, resnum)
+    
 
     println("	valuegap	|	pricegap	|	iternum")
 
@@ -55,11 +62,13 @@ function solvereservesmodel!(model::ReservesModel, policiesout::Bool=false,
 		(valuegap<model.compuparams.valtol) && (pricegap<model.compuparams.valtol) && (policiesout=true)
 		(resiternum==itermax-1) && (policiesout=true)
 		# 1. Expectation on exogenous varaibles
-		valuepayexpectation!(expectedvaluepay, model, interimvaluenom)
+		mexpectation!(tempdryw, model.valuepay, model.grids.mmass)
+		ywexpectation!(expectedvaluepay, tempdryw, # here tempdry has the expectation over mshock 
+							model.grids.ytrans, model.grids.regimetrans,model.econparams.bbeta,tempdry)
+		
 		# 2. Solve value of default
-		defaultgap=solvedefaultvalue!(model, expectedvaluepay, defaultflowutility, 
-								newvaluedefault, 
-								interimdefaultvalue, reservesmaxtemp, reservesidtemp, resrestemp)
+		defaultgap=solvedefaultvalue!(model, expectedvaluepay, defaultflowutility, newvaluedefault, 
+								tempryw, reservesmaxtemp, reservesidtemp, temprr, tempry)
 		# 3. Update value function: parallel for each set of exogenous states. 
 			# Here i need to use comprehensions to pass values (no need to predefine oustide the loop)
 			# pmap is enough since function return is inplaced
@@ -71,27 +80,29 @@ function solvereservesmodel!(model::ReservesModel, policiesout::Bool=false,
 		# 		expectedvaluepay[ :, :, 3, 1], model.cashinhandpay[ :, :, 3], model.bondprice[:,:,3,1],
 		# 		newvaluedefault[ :, 3], model.policies.reservesindefault[:, 3], 1, model.econparams, model.compuparams, model.grids, true )		
 		# pmap requires shared arrays for inplace! outputs
-		pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:2*ynum], [sub(newbondprice, :, :, iyr) for iyr=1:2*ynum], # Outputs
-				[sub(debtpolicy, :, :, :, iyr) for iyr=1:2*ynum], [sub(reservespolicy, :, :, :, iyr) for iyr=1:2*ynum], # Outputs
-				[sub(defaultpolicy, :, :, :, iyr) for iyr=1:2*ynum],  # Outputs
-				[expectedvaluepay[ :, :, iyr] for iyr=1:2*ynum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:2*ynum],
-				[model.bondprice[ :, :, iyr] for iyr=1:2*ynum], [newvaluedefault[ :, iyr] for iyr=1:2*ynum], 
-				[model.policies.reservesindefault[:, iyr] for iyr=1:2*ynum], [cld(iyr, ynum) for iyr=1:2*ynum], 
-				repeated( model.econparams, 2*ynum), repeated( model.compuparams, 2*ynum), repeated( model.grids, 2*ynum), repeated(policiesout, 2*ynum) )
+		pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [sub(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
+				[sub(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [sub(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
+				[sub(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
+				[expectedvaluepay[ :, :, iyr] for iyr=1:exonum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum],
+				[model.bondprice[ :, :, iyr] for iyr=1:exonum], [newvaluedefault[ :, iyr] for iyr=1:exonum], 
+				[model.policies.reservesindefault[:, iyr] for iyr=1:exonum], [cld(iyr, ynum) for iyr=1:exonum], 
+				repeated( model.econparams, exonum), repeated( model.compuparams, exonum), repeated( model.grids, exonum), repeated(policiesout, exonum) )
 		# 4. Find new price: take expectation over regime and output
-		priceexpectation!(newbondprice, interimvaluenom,
-							model.econparams, model.grids.ytrans, model.compuparams.ynum)
+		ywexpectation!(tempdryw, newbondprice, 
+							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),
+							tempdry)
+		setindex!(newbondprice, tempdryw, :)
 		# 5. Find gaps and update 
 		axpy!(-1.0, newvaluepay, model.valuepay)
 		maxabs!(sub(reservesmaxtemp,1:1), model.valuepay)
 		valuegap=reservesmaxtemp[1]/(1-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
 		setindex!(model.valuepay, newvaluepay, :)
-		# Cannot do the same, old price cannot overwritten because of updatespeed. Recall interimvaluenom[:,:,:,1:2] also holds newbondprice
-		axpy!(-1.0, model.bondprice, sub(interimvaluenom, : ,: ,: , 1:2) )
-		maxabs!(sub(reservesmaxtemp,1:1), interimvaluenom[:,:,:,1:2])
+		# Cannot do the same, old price cannot overwritten because of updatespeed. Recall tempdryw also holds newbondprice
+		axpy!(-1.0, model.bondprice, tempdryw )
+		maxabs!(sub(reservesmaxtemp,1:1), tempdryw)
 		pricegap=reservesmaxtemp[1]
 		# Update Control
-		scal!(debtnum*resnum*ynum*2, 1-model.compuparams.updatespeed*138/(resiternum+138), model.bondprice, 1 )
+		scal!(debtnum*resnum*ynum*regimenum, 1-model.compuparams.updatespeed*138/(resiternum+138), model.bondprice, 1 )
 		axpy!(model.compuparams.updatespeed*138/(resiternum+138), newbondprice, model.bondprice )
 		# update policies
 	    if policiesout

@@ -4,9 +4,9 @@ using Base.LinAlg.BLAS
 using JLD
 
 export ComputationParams, EconParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
-export modelinitialize!, valuepayexpectation!, solvedefaultvalue!, solvereservesmodel!
+export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
 export updatevaluepaydrm!, mthresholds!, mergethresholds!, defaultthresholds!
-export suddenstopthresholds!, integratethresholds!, priceexpectation!, getpolicies!
+export suddenstopthresholds!, integratethresholds!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!, reservesfigures
 
 
@@ -47,9 +47,9 @@ immutable EconParams
 	defcost1::Float64
 	defcost2::Float64
 	reentry::Float64
-	# Sudden Stop transition Probability
-	norm2ss::Float64
-	ss2ss::Float64
+	# Regime transition Probability
+	panicfrequency::Float64
+	panicduration::Float64
 end
 
 include("rouwenhorst.jl")
@@ -69,7 +69,9 @@ immutable ModelGrids
 	debt::Array{Float64,1}
 	debtmaxss::Array{Int64,1}
 	# reserves
-	reserves::Array{Float64,1}	
+	reserves::Array{Float64,1}
+	# regime
+	regimetrans::Array{Float64,2}	
 end
 
 immutable ModelPolicies
@@ -161,7 +163,8 @@ end
 # Functions 
 include("modelinitialize!.jl")
 # Functions to solve model (maybe no need to upload every time)
-include("valuepayexpectation!.jl")
+include("mexpectation!.jl")
+include("ywexpectation!.jl")
 include("solvedefaultvalue!.jl")
 include("solvereservesmodel!.jl")
 include("updatevaluepaydrm!.jl")	

@@ -13,9 +13,7 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel)
 	cumsum!(cumytrans, model.grids.ytrans, 2)
 	cummmass=Array{Float64}(model.compuparams.mnum)
 	cumsum!(cummmass, model.grids.mmass)
-	regimetrans=Array{Float64}(2,2)
-	regimetrans[1,:]=[1-model.econparams.norm2ss model.econparams.norm2ss]
-	regimetrans[2,:]=[1-model.econparams.ss2ss model.econparams.ss2ss]
+	
 	# Longindex to avoid several calls
 	longstateindex::Int64=0
 	# 1. Simulation
@@ -23,10 +21,10 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel)
 	   # Enter with previously chosen debt, reserves, and default state  
 		if idper==1 # Since Markov exogenous procesess assume initial value, old output was median index, old regime was no ss
 	       simulated.yind[idper]=findfirst(x->(x>simulated.randomshocks[idper,1]), cumytrans[cld(model.compuparams.ynum, 2), :] )
-	       simulated.randomshocks[idper, 3]<regimetrans[1,2] ? simulated.regime[idper]=2 : simulated.regime[idper]=1
+	       simulated.randomshocks[idper, 3]<model.grids.regimetrans[1,2] ? simulated.regime[idper]=2 : simulated.regime[idper]=1
 		else
 	       simulated.yind[idper]=findfirst(x->(x>simulated.randomshocks[idper,1]), cumytrans[simulated.yind[idper-1], :] )
-	       simulated.randomshocks[idper, 3]<regimetrans[ simulated.regime[idper-1], 2 ] ? simulated.regime[idper]=2 : simulated.regime[idper]=1
+	       simulated.randomshocks[idper, 3]<model.grids.regimetrans[ simulated.regime[idper-1], 2 ] ? simulated.regime[idper]=2 : simulated.regime[idper]=1
 		end
 		simulated.mind[idper]=findfirst(x->(x>simulated.randomshocks[idper,2]), cummmass)
 		# Reentry

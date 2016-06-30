@@ -20,7 +20,7 @@ module playground
 		13,		# mnum::Int64
 		-100.0,	# thrmin::Float64
 		# Tolerances
-		1e-5, 	# valtol::Float64 
+		1e-3, 	# valtol::Float64 
 		# Price updating step
 		0.25, 	# updatespeed::Float64 
 		)
@@ -41,8 +41,8 @@ module playground
 		0.25, 	# defcost2::Float64
 		0.0385, # reentry::Float64
 		# Sudden Stop Probability
-		0.05, 	# norm2ss::Float64
-		1.0-1.0/8   # ss2ss::Float64
+		16.0, 	# panicfrequency::Float64 -- One every 16 quarters
+		8.0   # panicduration::Float64 -- 8 quarters
 		)
 	
 	basemodel=ReservesModel(basecompuparams,baseeconparams)

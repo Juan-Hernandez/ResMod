@@ -37,8 +37,11 @@ function makegrids(computationparameters::ComputationParams,econparams::EconPara
 	end
 	# Reserves Grid (vector):
 	reserves::Array{Float64,1}=linspace(computationparameters.resmin, computationparameters.resmax, computationparameters.resnum)
+
+	# Regime transition:
+	regimetrans::Array{Float64,2}= [1.0-1.0/econparams.panicfrequency 1.0/econparams.panicfrequency; 1.0/econparams.panicduration 1.0-1.0/econparams.panicduration]
 	# Remember, first debt, second reserves, third Mshock, fourth output, fifth sudden stop
-	grids=ModelGrids( y, ytrans, yergodic, ydefault, mmidpoints, mextremes, mmass, debt, debtmaxss, reserves)
+	grids=ModelGrids( y, ytrans, yergodic, ydefault, mmidpoints, mextremes, mmass, debt, debtmaxss, reserves, regimetrans)
 	return grids
 end
 
