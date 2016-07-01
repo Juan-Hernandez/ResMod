@@ -1,4 +1,8 @@
 function reservesfigures(model::ReservesModel, simulated::ModelSimulation, moments::ModelMoments)
+	# 0. Preliminaries
+	mmass=model.grids.mmass
+
+
 	# 1. Extra matrices for plot	
 	bondspread=Array{Float64}( model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum, 2)
 	broadcast!(/, bondspread, model.econparams.coupon*(1-model.econparams.llambda)+model.econparams.llambda , model.bondprice)
@@ -6,19 +10,7 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	broadcast!(^, bondspread, bondspread, 4)
 	broadcast!(+, bondspread, bondspread, -(1+model.econparams.rfree)^4)
 	broadcast!(*, bondspread, bondspread, 10000)
-	# THIS IS probability of default next period for all possible endogenous state choices. 
-	# Expectation is taken over exogenous states
-	defaultnextprob=Array{Float64}(model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum, 2)
-	interimprob=Array{Float64}(model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum, 3)
-	regimetrans=Array{Float64}(2,2)
-	regimetrans[1,:]=[1-model.econparams.norm2ss model.econparams.norm2ss]
-	regimetrans[2,:]=[1-model.econparams.ss2ss model.econparams.ss2ss]
-
-	moutputregimeexpectation!(defaultnextprob, model.policies.default, 
-								model.grids.mmass, model.grids.ytrans, regimetrans,
-								interimprob)
 	
-
 	# 2. Point Values for figures
 
 	# In general output mean is close to YN+1/2
@@ -42,14 +34,29 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	reservesnextmeanss=model.policies.reserves[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, moments.ymeanind, 2]
 	reservesnextylowstdss=model.policies.reserves[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, ylowstdind, 2]
 
+	# 3. Average mshock out on policies
+	debtpolicysmooth=Array{Float64}(size(model.bondprice))
+	reservespolicysmooth=Array{Float64}(size(model.bondprice))
+	defaultpolicysmooth=Array{Float64}(size(model.bondprice))
+	mexpectation!(debtpolicysmooth, model.grids.debt[model.policies.debt], model.grids.mmass)
+	mexpectation!(reservespolicysmooth, model.grids.reserves[model.policies.reserves], model.grids.mmass)
+	mexpectation!(defaultpolicysmooth, model.policies.default, model.grids.mmass)
+
+	# THIS IS probability of default next period for all possible endogenous state choices. 
+	# Expectation is taken over exogenous states
+	defaultnextprob=Array{Float64}(model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum, 2)
+	tempdry=Array{Float64}(model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum)
+	ywexpectation!(defaultnextprob, defaultpolicysmooth, 
+							model.grids.ytrans, model.grids.regimetrans, 1.0,
+							tempdry)
 	
-	# 3. Figures
+	# 4. Figures
 	""" Make data frames: better for plotting with Gadfly """
 	# Spreads too big overflow dataframe or plot
 	bondspread[bondspread.>1.0e10]=Inf
 	# Recall price and spread are contingent on current income and regime but future debt and reserves
 	
-	# 3.1 Spread vs next period debt
+	# 4.1 Spread vs next period debt
 	# Make dataframe for figure
 	figdata=DataFrame(Debt=repmat(0.25*model.grids.debt, 4), 
 						Spread=[bondspread[:, reservesnextmean, moments.ymeanind, 1]; bondspread[:, reservesnextmeanss, moments.ymeanind, 2];
@@ -69,7 +76,7 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 					Guide.title("Spread given next period Debt"))
 	# Save plot
 	currdir=pwd()
-	cd("$(pwd())\\figures")
+	cd("..\\..\\figures")
 	draw(SVG("Spread-debt.svg", 9inch, 6inch), figure1)	
 
 	# 3.2 Spread vs Next Period Reserves 
@@ -79,10 +86,10 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 								bondspread[debtnextylowstd, :, ylowstdind, 1]' bondspread[debtnextylowstdss, :, ylowstdind, 2]' ]),
 						DefProb=vec([defaultnextprob[debtnextmean, :, moments.ymeanind, 1]' defaultnextprob[debtnextmeanss, :, moments.ymeanind, 2]'
 								defaultnextprob[debtnextylowstd, :, ylowstdind, 1]' defaultnextprob[debtnextylowstdss, :, ylowstdind, 2]' ]),
-						NextDebt=0.25*model.grids.debt[vec([ model.policies.debt[moments.debtmeanind, :, moments.mmeanind, moments.ymeanind, 1]' 
-						 									model.policies.debt[moments.debtmeanind, :, moments.mmeanind, moments.ymeanind, 2]'
-						 									model.policies.debt[moments.debtmeanind, :, moments.mmeanind, ylowstdind, 1]' 
-						 									model.policies.debt[moments.debtmeanind, :, moments.mmeanind, ylowstdind, 2]' ] )],
+						NextDebt=0.25*vcat(slice(debtpolicysmooth, moments.debtmeanind, :, moments.ymeanind, 1), 
+						 					slice(debtpolicysmooth, moments.debtmeanind, :, moments.ymeanind, 2),
+		 									slice(debtpolicysmooth, moments.debtmeanind, :, ylowstdind, 1), 
+						 					slice(debtpolicysmooth, moments.debtmeanind, :, ylowstdind, 2) ),
 						ExoStates=repeat(["Yavg";"YavgPanic";"Ylow";"YlowPanic"], inner=[model.compuparams.resnum]) )
 	# Just bind x and y aesthetic for points
 	figpointsx=0.25*model.grids.reserves[ [reservesnextmean reservesnextmeanss reservesnextylowstd reservesnextylowstdss] ]
@@ -137,11 +144,10 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 
 	# Make dataframe for figure
 	figdata=DataFrame(Output=repmat(model.grids.y, 2), 
-						NextDebt=0.25*vec(model.grids.debt[model.policies.debt[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 1:2] ]),
-						NextReserves=0.25*vec(model.grids.reserves[model.policies.reserves[
-												moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 1:2 ] ]),
+						NextDebt=0.25*vec(slice(debtpolicysmooth,moments.debtmeanind, moments.reservesmeanind, :, 1:2) ),
+						NextReserves=0.25*vec(slice(reservespolicysmooth, moments.debtmeanind, moments.reservesmeanind, :, 1:2 ) ),
 						Sunspot=repeat(["Normal";"Panic"], inner=[model.compuparams.ynum]),
-						Default=vec(model.policies.default[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 1:2]))
+						Default=vec(slice(defaultpolicysmooth, moments.debtmeanind, moments.reservesmeanind, :, 1:2) ) )
 	figdata2=by(figdata,[:Sunspot, :Default], df->string(df[1,:Sunspot],'-',mean(df[1,:Default]) ) )
 	figdata=join(figdata, figdata2, on=[:Sunspot, :Default], kind=:inner)
 	# Just bind x and y aesthetic for points

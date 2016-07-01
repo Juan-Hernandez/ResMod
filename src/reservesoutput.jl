@@ -9,7 +9,7 @@ using DataFrames
 export basemodel, basesimul, basemoments
 # 0. Load solved model
 # Loads basemodel
-@load "simulatedmodel.jld"
+@load "firstsolved.jld"
 # 1. Make figures
 include("reservesfigures.jl")
 reservesfigures(basemodel, basesimul, basemoments)
