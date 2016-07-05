@@ -1,7 +1,9 @@
 function reservesfigures(model::ReservesModel, simulated::ModelSimulation, moments::ModelMoments)
 	# 0. Preliminaries
 	mmass=model.grids.mmass
-
+	debtpoints=Array{Float64}(4)
+	reservespoints=Array{Float64}(4)
+	outputpoints=Array{Float64}(4)
 
 	# 1. Extra matrices for plot	
 	bondspread=Array{Float64}( model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum, 2)
@@ -11,30 +13,7 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	broadcast!(+, bondspread, bondspread, -(1+model.econparams.rfree)^4)
 	broadcast!(*, bondspread, bondspread, 10000)
 	
-	# 2. Point Values for figures
-
-	# In general output mean is close to YN+1/2
-	outputmeanind=findfirst(x->(x>moments.outputmean),model.grids.y)
-	
-	outputsigmalowind=findfirst(x->(x>moments.outputmean-1.6*moments.outputsigma),model.grids.y)
-	ylow16stdind=findlast( x->(x<moments.outputmean-1.6*moments.outputsigma)  ,model.grids.y)
-	yfirstpayind=findfirst(!model.policies.default[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 1] )
-	ylowstdind=max(ylow16stdind, yfirstpayind)
-
-	# Next debt and reserves levels at  debt, reserves; mean m,
-	# mean and 1.6sd lower income, both regimes
-
-	debtnextmean=model.policies.debt[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, moments.ymeanind, 1]
-	debtnextylowstd=model.policies.debt[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind,ylowstdind, 1]
-	debtnextmeanss=model.policies.debt[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, moments.ymeanind, 2]
-	debtnextylowstdss=model.policies.debt[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, ylowstdind, 2]
-
-	reservesnextmean=model.policies.reserves[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, moments.ymeanind, 1]
-	reservesnextylowstd=model.policies.reserves[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, ylowstdind, 1]
-	reservesnextmeanss=model.policies.reserves[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, moments.ymeanind, 2]
-	reservesnextylowstdss=model.policies.reserves[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, ylowstdind, 2]
-
-	# 3. Average mshock out on policies
+	# 2. Average mshock out on policies
 	debtpolicysmooth=Array{Float64}(size(model.bondprice))
 	reservespolicysmooth=Array{Float64}(size(model.bondprice))
 	defaultpolicysmooth=Array{Float64}(size(model.bondprice))
@@ -49,7 +28,41 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	ywexpectation!(defaultnextprob, defaultpolicysmooth, 
 							model.grids.ytrans, model.grids.regimetrans, 1.0,
 							tempdry)
+
+	# 3. Point Values for figures
+
+	# In general output mean is close to YN+1/2
+	outputmeanind::Int64 = findfirst(x->(x>moments.outputmean),model.grids.y)
 	
+	outputsigmalowind::Int64 = findfirst(x->(x>moments.outputmean-1.6*moments.outputsigma),model.grids.y)
+	ylow16stdind::Int64 = findlast( x->(x<moments.outputmean-1.6*moments.outputsigma)  ,model.grids.y)
+	yfirstpayind::Int64 = findfirst(!model.policies.default[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 1] )
+	ylowstdind::Int64 = max(ylow16stdind, yfirstpayind)
+
+	# Next debt and reserves levels at  debt, reserves; mean m,
+	# mean and 1.6sd lower income, both regimes
+
+	debtnextmean = debtpolicysmooth[ moments.debtmeanind, moments.reservesmeanind, moments.ymeanind, 1]
+	debtnextylowstd = debtpolicysmooth[ moments.debtmeanind, moments.reservesmeanind, ylowstdind, 1]
+	debtnextmeanss = debtpolicysmooth[ moments.debtmeanind, moments.reservesmeanind, moments.ymeanind, 2]
+	debtnextylowstdss =debtpolicysmooth[ moments.debtmeanind, moments.reservesmeanind, ylowstdind, 2]
+
+	iddebtnextmean = ceil(Int64, dot( slice(model.policies.debt, moments.debtmeanind, moments.reservesmeanind, :, moments.ymeanind, 1), model.grids.mmass ) )
+	iddebtnextylowstd = ceil(Int64, dot( slice(model.policies.debt, moments.debtmeanind, moments.reservesmeanind, :, ylowstdind, 1), model.grids.mmass ) )
+	iddebtnextmeanss = ceil(Int64, dot( slice(model.policies.debt, moments.debtmeanind, moments.reservesmeanind, :, moments.ymeanind, 2), model.grids.mmass ) )
+	iddebtnextylowstdss = ceil(Int64, dot( slice(model.policies.debt, moments.debtmeanind, moments.reservesmeanind, :, ylowstdind, 2), model.grids.mmass ) )
+
+	reservesnextmean = reservespolicysmooth[ moments.debtmeanind, moments.reservesmeanind, moments.ymeanind, 1]
+	reservesnextylowstd = reservespolicysmooth[ moments.debtmeanind, moments.reservesmeanind, ylowstdind, 1]
+	reservesnextmeanss = reservespolicysmooth[ moments.debtmeanind, moments.reservesmeanind, moments.ymeanind, 2]
+	reservesnextylowstdss =reservespolicysmooth[ moments.debtmeanind, moments.reservesmeanind, ylowstdind, 2]
+
+	idreservesnextmean::Int64 = ceil(Int64, dot( slice(model.policies.reserves, moments.debtmeanind, moments.reservesmeanind, :, moments.ymeanind, 1), model.grids.mmass ) )
+	idreservesnextylowstd::Int64 = ceil(Int64, dot( slice(model.policies.reserves, moments.debtmeanind, moments.reservesmeanind, :, ylowstdind, 1), model.grids.mmass ) )
+	idreservesnextmeanss::Int64 = ceil(Int64, dot( slice(model.policies.reserves, moments.debtmeanind, moments.reservesmeanind, :, moments.ymeanind, 2), model.grids.mmass ) )
+	idreservesnextylowstdss::Int64 = ceil(Int64, dot( slice(model.policies.reserves, moments.debtmeanind, moments.reservesmeanind, :, ylowstdind, 2), model.grids.mmass ) )
+
+
 	# 4. Figures
 	""" Make data frames: better for plotting with Gadfly """
 	# Spreads too big overflow dataframe or plot
@@ -58,19 +71,19 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	
 	# 4.1 Spread vs next period debt
 	# Make dataframe for figure
-	figdata=DataFrame(Debt=repmat(0.25*model.grids.debt, 4), 
-						Spread=[bondspread[:, reservesnextmean, moments.ymeanind, 1]; bondspread[:, reservesnextmeanss, moments.ymeanind, 2];
-								bondspread[:, reservesnextylowstd, ylowstdind, 1]; bondspread[:, reservesnextylowstdss, ylowstdind, 2] ],
+	debtframe=DataFrame(Debt=repmat(0.25*model.grids.debt, 4), 
+						Spread=[ bondspread[:, idreservesnextmean, moments.ymeanind, 1]; bondspread[:, idreservesnextmeanss, moments.ymeanind, 2];
+									bondspread[:, idreservesnextylowstd, ylowstdind, 1]; bondspread[:, idreservesnextylowstdss, ylowstdind, 2] ],
 						ExoStates=repeat(["Yavg";"YavgPanic";"Ylow";"YlowPanic"], inner=[model.compuparams.debtnum]) )
 	# Just bind x and y aesthetic for points
-	figpointsx=0.25*model.grids.debt[ [debtnextmean debtnextmeanss debtnextylowstd  debtnextylowstdss] ]
-	figpointsy=[bondspread[debtnextmean, reservesnextmean, moments.ymeanind, 1];
-				bondspread[debtnextmeanss, reservesnextmeanss, moments.ymeanind, 2];
-				bondspread[debtnextylowstd, reservesnextylowstdss, ylowstdind, 1]
-				bondspread[debtnextylowstdss, reservesnextylowstdss, ylowstdind, 2] ]
+	debtpoints=0.25*[debtnextmean debtnextmeanss debtnextylowstd  debtnextylowstdss]
+	spreadpoints=[bondspread[iddebtnextmean, idreservesnextmean, moments.ymeanind, 1];
+				bondspread[iddebtnextmeanss, idreservesnextmeanss, moments.ymeanind, 2];
+				bondspread[iddebtnextylowstd, idreservesnextylowstdss, ylowstdind, 1]
+				bondspread[iddebtnextylowstdss, idreservesnextylowstdss, ylowstdind, 2] ]
 	# Make layers
-	lineslayer=layer(figdata, x=:Debt, y=:Spread, color=:ExoStates, Geom.line)
-	pointslayer=layer(x=figpointsx, y=figpointsy, Geom.point)
+	lineslayer=layer(debtframe, x=:Debt, y=:Spread, color=:ExoStates, Geom.line)
+	pointslayer=layer(x=debtpoints, y=spreadpoints, Geom.point)
 	# Make plot
 	figure1=plot(lineslayer, pointslayer, Coord.cartesian(xmax=0.25*model.compuparams.debtmax+0.01, ymax=1000),
 					Guide.title("Spread given next period Debt"))
@@ -79,44 +92,42 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	cd("..\\..\\figures")
 	draw(SVG("Spread-debt.svg", 9inch, 6inch), figure1)	
 
-	# 3.2 Spread vs Next Period Reserves 
+	# 4.2 Spread vs Next Period Reserves 
 	# Make dataframe for figure
-	figdata=DataFrame(Reserves=repmat(0.25*model.grids.reserves, 4), 
-						Spread=vec([bondspread[debtnextmean, :, moments.ymeanind, 1]' bondspread[debtnextmeanss, :, moments.ymeanind, 2]'
-								bondspread[debtnextylowstd, :, ylowstdind, 1]' bondspread[debtnextylowstdss, :, ylowstdind, 2]' ]),
-						DefProb=vec([defaultnextprob[debtnextmean, :, moments.ymeanind, 1]' defaultnextprob[debtnextmeanss, :, moments.ymeanind, 2]'
-								defaultnextprob[debtnextylowstd, :, ylowstdind, 1]' defaultnextprob[debtnextylowstdss, :, ylowstdind, 2]' ]),
+	reservesframe=DataFrame(Reserves=repmat(0.25*model.grids.reserves, 4), 
+						Spread=vec([bondspread[iddebtnextmean, :, moments.ymeanind, 1]' bondspread[iddebtnextmeanss, :, moments.ymeanind, 2]'
+								bondspread[iddebtnextylowstd, :, ylowstdind, 1]' bondspread[iddebtnextylowstdss, :, ylowstdind, 2]' ]),
+						DefProb=vec([defaultnextprob[iddebtnextmean, :, moments.ymeanind, 1]' defaultnextprob[iddebtnextmeanss, :, moments.ymeanind, 2]'
+								defaultnextprob[iddebtnextylowstd, :, ylowstdind, 1]' defaultnextprob[iddebtnextylowstdss, :, ylowstdind, 2]' ]),
 						NextDebt=0.25*vcat(slice(debtpolicysmooth, moments.debtmeanind, :, moments.ymeanind, 1), 
 						 					slice(debtpolicysmooth, moments.debtmeanind, :, moments.ymeanind, 2),
 		 									slice(debtpolicysmooth, moments.debtmeanind, :, ylowstdind, 1), 
 						 					slice(debtpolicysmooth, moments.debtmeanind, :, ylowstdind, 2) ),
 						ExoStates=repeat(["Yavg";"YavgPanic";"Ylow";"YlowPanic"], inner=[model.compuparams.resnum]) )
 	# Just bind x and y aesthetic for points
-	figpointsx=0.25*model.grids.reserves[ [reservesnextmean reservesnextmeanss reservesnextylowstd reservesnextylowstdss] ]
-	# Same figpointsy as in figure 1
+	reservespoints=0.25*[reservesnextmean reservesnextmeanss reservesnextylowstd reservesnextylowstdss]
 	# Make layers
-	lineslayer=layer(figdata, x=:Reserves, y=:Spread, color=:ExoStates, Geom.line)
-	pointslayer=layer(x=figpointsx, y=figpointsy, Geom.point)
+	lineslayer=layer(reservesframe, x=:Reserves, y=:Spread, color=:ExoStates, Geom.line)
+	pointslayer=layer(x=reservespoints, y=spreadpoints, Geom.point)
 	# Make plot
 	figure2=plot(lineslayer, pointslayer, Coord.cartesian(xmax=0.25*model.compuparams.resmax+0.01, ymax=1000),
 					Guide.title("Spread given next period Reserves"))
 	# Save plot
 	draw(SVG("Spread-Reserves.svg", 9inch, 6inch), figure2)		
 
-	# 3.3 Defalult prob next period given reserves
+	# 4.3 Defalult prob next period given reserves
 	# Make dataframe for figure
 
 	# Just bind x and y aesthetic for points
-	# same figpointsx as before 
-	figpointsy=[defaultnextprob[debtnextmean, reservesnextmean, moments.ymeanind, 1];
-				defaultnextprob[debtnextmeanss, reservesnextmeanss, moments.ymeanind, 2];
-				defaultnextprob[debtnextylowstd, reservesnextylowstd, ylowstdind, 1]
-				defaultnextprob[debtnextylowstdss, reservesnextylowstdss, ylowstdind, 2] ]
+	defaultpoints=[defaultnextprob[iddebtnextmean, idreservesnextmean, moments.ymeanind, 1];
+				defaultnextprob[iddebtnextmeanss, idreservesnextmeanss, moments.ymeanind, 2];
+				defaultnextprob[iddebtnextylowstd, idreservesnextylowstd, ylowstdind, 1]
+				defaultnextprob[iddebtnextylowstdss, idreservesnextylowstdss, ylowstdind, 2] ]
 	# Make layers
-	lineslayer=layer(figdata, x=:Reserves, y=:DefProb, color=:ExoStates, Geom.line)
-	pointslayer=layer(x=figpointsx, y=figpointsy, Geom.point)
+	lineslayer=layer(reservesframe, x=:Reserves, y=:DefProb, color=:ExoStates, Geom.line)
+	pointslayer=layer(x=reservespoints, y=defaultpoints, Geom.point)
 	# Make plot
-	figure3=plot(lineslayer, pointslayer, Coord.cartesian(xmax=0.25*model.compuparams.resmax+0.01, ymax=1),
+	figure3=plot(lineslayer, pointslayer, Coord.cartesian(xmax=0.25*model.compuparams.resmax+0.01, ymax=0.1),
 					Guide.title("Default probability given next period Reserves"))
 	# Save plot
 	draw(SVG("DefProb-Reserves.svg", 9inch, 6inch), figure3)	
@@ -124,12 +135,9 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	# 3.4 Debt given Reserves THIS IS CRAZY
 	# Plot next period debt given current reserves, zero temporary shock around mean debt mean level
 	# Same dataframe
-	# Just bind x and y aesthetic for points
-	# same figpointsx as before 
-	figpointsy=0.25*model.grids.debt[ [debtnextmean, debtnextmeanss, debtnextylowstd, debtnextylowstdss] ]
 	# Make layers
-	lineslayer=layer(figdata, x=:Reserves, y=:NextDebt, color=:ExoStates, Geom.line)
-	pointslayer=layer(x=figpointsx, y=figpointsy, Geom.point)
+	lineslayer=layer(reservesframe, x=:Reserves, y=:NextDebt, color=:ExoStates, Geom.line)
+	pointslayer=layer(x=reservespoints, y=debtpoints, Geom.point)
 	# Make plot
 	figure4=plot(lineslayer, pointslayer, Guide.title("Next Debt given current Reserves"),
 					Coord.cartesian(xmax=0.25*model.compuparams.resmax+0.01, ymax=0.25*model.compuparams.debtmax+0.01) )
@@ -137,25 +145,25 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	draw(SVG("NextDebt-Reserves.svg", 9inch, 6inch), figure4)	
 
 	# 3.5 Debt given current output
+
+	# Find default thresholds
 	defoutput1=findfirst(!model.policies.default[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 1])
 	defoutput2=findfirst(!model.policies.default[moments.debtmeanind, moments.reservesmeanind, moments.mmeanind, :, 2])
 	
-
-
 	# Make dataframe for figure
-	figdata=DataFrame(Output=repmat(model.grids.y, 2), 
+	outputframe=DataFrame(Output=repmat(model.grids.y, 2), 
 						NextDebt=0.25*vec(slice(debtpolicysmooth,moments.debtmeanind, moments.reservesmeanind, :, 1:2) ),
 						NextReserves=0.25*vec(slice(reservespolicysmooth, moments.debtmeanind, moments.reservesmeanind, :, 1:2 ) ),
 						Sunspot=repeat(["Normal";"Panic"], inner=[model.compuparams.ynum]),
 						Default=vec(slice(defaultpolicysmooth, moments.debtmeanind, moments.reservesmeanind, :, 1:2) ) )
-	figdata2=by(figdata,[:Sunspot, :Default], df->string(df[1,:Sunspot],'-',mean(df[1,:Default]) ) )
-	figdata=join(figdata, figdata2, on=[:Sunspot, :Default], kind=:inner)
+	tempframe=by(outputframe,[:Sunspot, :Default], df->string(df[1,:Sunspot],'-', mean(df[1,:Default])>0.01? "Default" : "Repay" ) )
+	outputframe=join(outputframe, tempframe, on=[:Sunspot, :Default], kind=:inner)
 	# Just bind x and y aesthetic for points
-	figpointsx=model.grids.y[ [moments.ymeanind moments.ymeanind ylowstdind ylowstdind] ]
+	outputpoints=model.grids.y[ [moments.ymeanind moments.ymeanind ylowstdind ylowstdind] ]
 	# Same figpointsy as in figure 4
 	# Make layers
-	lineslayer=layer(figdata, x=:Output, y=:NextDebt, color=:x1, Geom.line)
-	pointslayer=layer(x=figpointsx, y=figpointsy, Geom.point)
+	lineslayer=layer(outputframe, x=:Output, y=:NextDebt, color=:x1, Geom.line)
+	pointslayer=layer(x=outputpoints, y=debtpoints, Geom.point)
 	# Make plot
 	figure5=plot(lineslayer, pointslayer, Coord.cartesian(xmin=model.grids.y[1], xmax=model.grids.y[end]), 
 					Guide.title("Next Debt given current Output"))
@@ -164,12 +172,9 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 
 	# 3.6 Debt given current output
 	# Same dataframe
-	# Just bind x and y aesthetic for points
-	# same figpointsx as before 
-	figpointsy=0.25*model.grids.reserves[ [reservesnextmean reservesnextmeanss reservesnextylowstd reservesnextylowstdss] ]
 	# Make layers
-	lineslayer=layer(figdata, x=:Output, y=:NextReserves, color=:x1, Geom.line)
-	pointslayer=layer(x=figpointsx, y=figpointsy, Geom.point)
+	lineslayer=layer(outputframe, x=:Output, y=:NextReserves, color=:x1, Geom.line)
+	pointslayer=layer(x=outputpoints, y=reservespoints, Geom.point)
 	figure6=plot(lineslayer, pointslayer, Coord.cartesian(xmin=model.grids.y[1], xmax=model.grids.y[end]),
 					Guide.title("Next Reserves given current Output"))
 	draw(SVG("NextReserves-Output.svg", 9inch, 6inch), figure6)		
