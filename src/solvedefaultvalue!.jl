@@ -1,9 +1,9 @@
 function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float64,4}, defaultflowutility::Array{Float64,3}, 
                             newvaluedefault::Array{Float64,3}, interimdefaultvalue::Array{Float64,3}, 
                             reservesmaxtemp::Array{Float64,2}, reservesidtemp::Array{Int64,2}, resrestemp::Array{Float64,2},
-                            tempry::Array{Float64,2})
-    defaultgap::Float64=10*model.compuparams.valtol
-    while defaultgap>(1-model.econparams.bbeta)*model.compuparams.valtol*0.0001
+                            tempry::Array{Float64,2}, valtol::Float64)
+    defaultgap::Float64=10*valtol
+    while defaultgap>(1-model.econparams.bbeta)*valtol*0.001
         # Expectations over future output and regime for default given current output, regime and FUTURE reserves.
         # Reshaping to use ywexpectation
         fill!(interimdefaultvalue,0.0) 

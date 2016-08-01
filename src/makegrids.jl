@@ -19,7 +19,9 @@ function makegrids(computationparameters::ComputationParams,econparams::EconPara
 	
 	# Temporary shock grid for integration:
 	# Define intervals and use midpoints
-	mextremes::Array{Float64,1}=linspace(-1.6*computationparameters.msigma,1.6*computationparameters.msigma,computationparameters.mnum+1)
+	mextremes::Array{Float64,1}=linspace(-computationparameters.msdwidth*computationparameters.msigma,
+											computationparameters.msdwidth*computationparameters.msigma,
+											computationparameters.mnum+1)
 	mmidpoints::Array{Float64,1}=midpoints(mextremes)
 	# Mass at each interval
 

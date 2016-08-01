@@ -17,13 +17,11 @@ module playground
 		26,		# resnum::Int64
 		# Temporary (smoothing shock parameters)
 		0.01, 	# msigma::Float64
+		1.6,	# msdwidth::Float64
 		13,		# mnum::Int64
 		-100.0,	# thrmin::Float64
-		# Tolerances
-		1e-3, 	# valtol::Float64 
-		# Price updating step
-		0.25, 	# updatespeed::Float64 
 		)
+
 	baseeconparams=EconParams(
 		# Consumer
 		0.985,	# bbeta::Float64
@@ -49,7 +47,18 @@ module playground
 	
 	modelinitialize!(basemodel)
 
-	solvereservesmodel!(basemodel)	
+	basesolverparam=SolverParams(
+		0.25, 	# updatespeed::Float64 
+		0, 		# startiternum::Int64
+		25,		# interprint::Int64 
+		6001,	# itermax::Int64
+		1000, 	# intermediatesave::Int64
+		false,	# policiesout::Bool
+		1e-5, 	# valtol::Float64 
+		)
+
+	solvereservesmodel!(basemodel)
+		
 	# Simulate model
 	basesimul=ModelSimulation(100000)
 	simulatemodel!(basesimul,basemodel)

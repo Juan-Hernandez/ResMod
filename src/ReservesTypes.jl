@@ -1,9 +1,8 @@
 module ReservesTypes
 
 using Base.LinAlg.BLAS
-using JLD
 
-export ComputationParams, EconParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
+export ComputationParams, EconParams, SolverParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
 export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
 export updatevaluepaydrm!, mthresholds!, mergethresholds!, defaultthresholds!
 export suddenstopthresholds!, integratethresholds!, getpolicies!
@@ -22,13 +21,10 @@ immutable ComputationParams
 	resmax::Float64
 	resnum::Int64
 	# Temporary (smoothing shock parameters)
-	msigma::Float64
+	msigma::Float64		# m is standard normal
+	msdwidth::Float64	# width of m support interval in sd
 	mnum::Int64
 	thrmin::Float64
-	# Tolerances
-	valtol::Float64 
-	# Price updating step
-	updatespeed::Float64
 end
 
 immutable EconParams
@@ -39,7 +35,7 @@ immutable EconParams
 	rfree::Float64 
 	# Bond Maturity and coupon
 	llambda::Float64 # inverse of quarterly avg maturity
-	coupon:: Float64 
+	coupon::Float64 
 	# Total Output correlation and variance
 	logoutputrho::Float64
 	logoutputsigma::Float64
@@ -107,6 +103,27 @@ immutable ReservesModel
 								reshape( grids.reserves, 1, compuparams.resnum),
 								reshape( grids.y, 1, 1, compuparams.ynum) )
 		new(compuparams, econparams, grids, valuepay, valuedefault, bondprice, policies, cashinhandpay)
+	end
+end
+
+type SolverParams
+	# Price updating step
+	updatespeed::Float64
+	# First iteration counter
+	startiternum::Int64
+	# iteration output printing frequency
+	iterprint::Int64
+	# Maximum iteration number
+	itermax::Int64
+	# intermediate results saving frequency
+	intermediatesave::Int64
+	# Recover policies
+	policiesout::Bool
+	# Tolerances
+	valtol::Float64 
+	function SolverParams(updatespeed=0.25, startiternum=0, iterprint=25, itermax=4001,
+							intermediatesave=1000, policiesout=false, valtol=1e-05)
+		new(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol)
 	end
 end
 

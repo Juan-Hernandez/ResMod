@@ -1,7 +1,7 @@
 function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondprice::AbstractArray{Float64,2}, 
 							 debtpolicy::AbstractArray{Int64,3}, reservespolicy::AbstractArray{Int64,3}, defaultpolicy::AbstractArray{Bool,3}, #Outputs
 							 expvalue::Array{Float64,2}, cashinhandpay::Array{Float64,2}, bondprice::Array{Float64,2},
-							 valuedefault::Array{Float64,1}, defaultreservesoptim::Array{Int64,1}, regime::Int64, 
+							 valuedefault::Array{Float64,1}, defaultreservesoptim::Array{Int64,1}, regime::Int64, valtol::Float64,
 							 econparams::EconParams, compuparams::ComputationParams, grids::ModelGrids, policiesout::Bool)
 """	This function returns updated array of value (current debt,reserves and m), policies: next debt, 
 	reserves and default (curr debt, res, m) for a fixed output and regime (output preallocation is done here),
@@ -75,7 +75,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 									cons0, cons1, vdiff, tempthres )
 					# 3.2 Merge with previous thresholds
 					thresnum=mergethresholds!(thresholds, threspolicy, thresnum, # Outputs
-										consexm, expvalue, econparams.bbeta, compuparams.valtol, grids.mextremes,
+										consexm, expvalue, econparams.bbeta, valtol, grids.mextremes,
 										newthresholds, newthrespolicy, newthresnum, idftres,
 										interimbigthresholds, interimthrespolicy, bigthresnum,
 										mergedsortidx, interimnewthresholds, interimthresnum,
@@ -85,7 +85,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 			# Here thresholds were merged for all future reserves.
 			# 3.3 Enhance threshold with default decision
 			(thresnum, debt1)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
-								expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, compuparams.valtol,
+								expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, valtol,
 								compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes[1],
 								interimnewthresholds, interimthrespolicy, interimthresnum,
 								vdiff, tempthres, cons0,
@@ -98,7 +98,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 					# if debt1=0 then default for all mshocks and no need to check SS
 					(thresnum,relevantss)=suddenstopthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs	
                             	expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, grids.debtmaxss[idebt],
-                            	compuparams.valtol, compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes,
+                            	valtol, compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes,
 								compuparams.resnum, interimnewthresholds, interimthrespolicy, interimthresnum,
 								vdiff, tempthres, cons0, # cons0: token temporary Float64
                             	debtminfres, res1, relevantss)
