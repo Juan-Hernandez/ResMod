@@ -1,34 +1,44 @@
-module playground
+module grosscalibratenoJLD
+#
+#addprocs(24)
+
 
 push!(LOAD_PATH,pwd())
 export basemodel
+
 using ReservesTypes
 
 
-df1=Array{Float64}(9)
+df1=Array{Float64}(18)
 df1=collect(linspace(-0.375,-0.1625,18))
 
+basecompuparams=ComputationParams(
+	# Output Grid Lenght
+	21,		# ynum::Int64
+	# Debt grid parameters
+	0.0,	# debtmin::Float64
+	1.02,	# debtmax::Float64
+	52,		# debtnum::Int64
+	# Reserves grid parameters
+	0.0,		# resmin::Float64
+	1.0, 	# resmax::Float64
+	51,		# resnum::Int64
+	# Temporary (smoothing shock parameters)
+	0.01, 	# msigma::Float64
+	1.6,	# msdwidth::Float64
+	13,		# mnum::Int64
+	-100.0,	# thrmin::Float64
+	)
+
+# Temporary arrays to store last model solution. Helps with speed
+tempvaluepay=Array{Float64}(basecompuparams.debtnum, basecompuparams.resnum, basecompuparams.mnum, basecompuparams.ynum, 2)
+tempvaluedefault=Array{Float64}(basecompuparams.resnum, basecompuparams.ynum, 2)
+tempbondprice=Array{Float64}(basecompuparams.debtnum, basecompuparams.resnum, basecompuparams.ynum, 2)
+
+basesolverparams=SolverParams(0.25, 0, 2, 6, 5000)
+
 for i=1:18
-	basecompuparams=ComputationParams(
-		# Output Grid Lenght
-		21,		# ynum::Int64
-		# Debt grid parameters
-		0.0,	# debtmin::Float64
-		1.02,	# debtmax::Float64
-		52,		# debtnum::Int64
-		# Reserves grid parameters
-		0.0,		# resmin::Float64
-		1.0, 	# resmax::Float64
-		51,		# resnum::Int64
-		# Temporary (smoothing shock parameters)
-		0.01, 	# msigma::Float64
-		13,		# mnum::Int64
-		-100.0,	# thrmin::Float64
-		# Tolerances
-		1e-5, 	# valtol::Float64 
-		# Price updating step
-		0.25, 	# updatespeed::Float64 
-		)
+
 	baseeconparams=EconParams(
 		# Consumer
 		0.985,	# bbeta::Float64
@@ -51,21 +61,40 @@ for i=1:18
 		)
 	
 	basemodel=ReservesModel(basecompuparams,baseeconparams)
-	
-	modelinitialize!(basemodel)
+	if i==1
+		modelinitialize!(basemodel)
+	else
+		setindex!(basemodel.valuepay, tempvaluepay, :)
+		setindex!(basemodel.valuedefault, tempvaluedefault, :)
+		setindex!(basemodel.bondprice, tempbondprice, :)
+	end
 
-	solvereservesmodel!(basemodel)	
-	oldmodel=basemodel
+	solvereservesmodel!(basemodel, basesolverparams)	
+	
+	setindex!(tempvaluepay,basemodel.valuepay,:)
+	setindex!(tempvaluedefault,basemodel.valuedefault,:)
+	setindex!(tempbondprice,basemodel.bondprice,:)
 	# Simulate model
 	basesimul=ModelSimulation(100000)
 	simulatemodel!(basesimul,basemodel)
 	# 4. Obtain moments
 	basemoments=ModelMoments()
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
-	show(fieldnames(basemoments))
-	println("----------------------------------------------------------------------------------------")
-	shof(basemonents)
-	println("========================================================================================")
+	println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	|")
+	println("---------------------------------------------------------------------------------------------")
+	showcompact(basemoments.debtmean)
+	print("	|	")
+	showcompact(basemoments.reservesmean)
+	print("	|	")
+	showcompact(basemoments.spreadmean)
+	print("	|	")
+	showcompact(basemoments.spreadsigma)
+	print("	|	")
+	showcompact(basemoments.defaultstatemean)
+	print("	|	")
+	showcompact(basemoments.defaultchoicemean)
+	println("	|	")
+	println("=============================================================================================")
 end	
 	
 end # Module end

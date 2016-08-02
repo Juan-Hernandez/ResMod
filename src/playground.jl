@@ -47,25 +47,41 @@ module playground
 	
 	modelinitialize!(basemodel)
 
-	basesolverparam=SolverParams(
+	basesolverparams=SolverParams(
 		0.25, 	# updatespeed::Float64 
 		0, 		# startiternum::Int64
-		25,		# interprint::Int64 
-		6001,	# itermax::Int64
+		1,		# interprint::Int64 
+		3,	# itermax::Int64
 		1000, 	# intermediatesave::Int64
 		false,	# policiesout::Bool
 		1e-5, 	# valtol::Float64 
 		)
 
-	solvereservesmodel!(basemodel)
-		
+	@time solvereservesmodel!(basemodel, basesolverparams)
+	@time solvereservesmodel!(basemodel, basesolverparams)	
 	# Simulate model
 	basesimul=ModelSimulation(100000)
 	simulatemodel!(basesimul,basemodel)
 	# 4. Obtain moments
 	basemoments=ModelMoments()
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
-
+	# Moments Output
+	println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	|")
+	println("---------------------------------------------------------------------------------------------")
+	showcompact(basemoments.debtmean)
+	print("	|	")
+	showcompact(basemoments.reservesmean)
+	print("	|	")
+	showcompact(basemoments.spreadmean)
+	print("	|	")
+	showcompact(basemoments.spreadsigma)
+	print("	|	")
+	showcompact(basemoments.defaultstatemean)
+	print("	|	")
+	showcompact(basemoments.defaultchoicemean)
+	println("	|	")
+	println("=============================================================================================")
+	
 	@save "firstsolved.jld" basemodel basesimul basemoments
 	
 	
