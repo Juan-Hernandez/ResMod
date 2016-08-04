@@ -28,6 +28,10 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 	relevantss::Bool=false
 
 	# Interim allocations
+	feasible=Array{Int64}(compuparams.debtnum, compuparams.resnum)
+	valuesatm+Array{Float64}(compuparams.debtnum, compuparams.resnum)
+
+
 	interimthresholds=Array{Float64}(compuparams.debtnum)
 	interimthresdebt=Array{Int64}(compuparams.debtnum)
 
@@ -63,25 +67,12 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 			broadcast!(*, consexm, bondprice, grids.debt-(1-econparams.llambda)*grids.debt[idebt] )
 			# Consumption excluding M given future reserves, future debt.
 			broadcast!(+, consexm, cashinhandpay[idebt,ires], -grids.reserves'/(1+econparams.rfree), consexm)
-			for idftres=1:compuparams.resnum
-				debtminfres=findfirst(x->(x>grids.mextremes[1]), consexm[ :, idftres] )
-				newthresnum=0
-				if debtminfres!=0
-					# 3.1 Find thresholds
-					newthresnum=mthresholds!(newthresholds, newthrespolicy, # Outputs
-									interimthresholds, interimthresdebt, # Interim allocations
-									consexm[ :, idftres], expvalue[ :, idftres], compuparams,
-									grids.mextremes, econparams.bbeta, debtminfres, 
-									cons0, cons1, vdiff, tempthres )
-					# 3.2 Merge with previous thresholds
-					thresnum=mergethresholds!(thresholds, threspolicy, thresnum, # Outputs
-										consexm, expvalue, econparams.bbeta, valtol, grids.mextremes,
-										newthresholds, newthrespolicy, newthresnum, idftres,
-										interimbigthresholds, interimthrespolicy, bigthresnum,
-										mergedsortidx, interimnewthresholds, interimthresnum,
-										debt1, debt2, res1, res2, tempindex, cons0, cons1, vdiff, tempthres)
-				end
-			end
+			
+			# GGC algorithm.
+			thresnum=GGQthresholds!(thresholds, threspolicy, 							# Outputs
+							consexm, expvalue, grids.mextremes,							# Array inputs
+							econmarams.bbeta, econmarams.ggamma, compuparams.debtnum,	# Scalar inputs
+                            valuesatm::Array{Float64,2}, feasible::Array{Int64,2})		# Temporary Array inputs 
 			# Here thresholds were merged for all future reserves.
 			# 3.3 Enhance threshold with default decision
 			(thresnum, debt1)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
