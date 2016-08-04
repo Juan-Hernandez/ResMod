@@ -1,8 +1,8 @@
 function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2}, 								# Outputs
 							consexm::Array{Float64,2}, expvalue::Array{Float64,2}, mextremes::Array{Float64,1},	# Array inputs
-							bbeta::Float64, valtol::Float64, ggamma::Int64, debtnum::Int64,						# Scalar inputs
-                            valuesatm::Array{Float64,2}, feasible::Array{Int64,2},					# Temporary Array inputs 
-                            )
+							bbeta::Float64, ggamma::Int64, debtnum::Int64,						# Scalar inputs
+                            valuesatm::Array{Float64,2}, feasible::Array{Int64,2})					# Temporary Array inputs 
+                            
 	mnew::Float64
 	cons1::Float64
 	val1::Float64
@@ -45,6 +45,6 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 	# Revert the vectors
 	thresholds[1:thresnum]=flipdim(thresholds[1:thresnum], 1)
 	threspolicy[1:thresnum]=flipdim(threspolicy[1:thresnum, :], 1)
-	
+
 	return thresnum
 end
