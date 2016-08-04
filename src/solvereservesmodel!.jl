@@ -5,6 +5,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 	itermax::Int64=solverparams.itermax 
 	intermediatesave::Int64=solverparams.intermediatesave
 	policiesout::Bool=solverparams.policiesout
+	updatespeed::Float64=solverparams.updatespeed
 
 	# Unpack counters
 	debtnum::Int64=model.compuparams.debtnum
@@ -54,7 +55,10 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
     # Main loop
 
 	while resiternum<itermax && ( valuegap>=solverparams.valtol || pricegap>=solverparams.valtol || !policiesout )
+		# 0. Output and update controls
+		# Increase iteration counter
 		resiternum+=1
+		# Set intermediate save
 		if mod1(resiternum,intermediatesave)==intermediatesave
 			jldopen("debugoldmodel.jld", "w") do file
 				write(file, "oldmodel", model)
@@ -63,10 +67,12 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 				write(file, "iternum", resiternum-1)
 			end
 		end
+		# Intermediate print and timing
 		(mod1(resiternum,iterprint)==1) && tic()
-		# 0. Just to make sure in the last iteration policies are recovered
+		# Policies out in last iteration
 		(valuegap<solverparams.valtol) && (pricegap<solverparams.valtol) && (policiesout=true)
 		(resiternum==itermax-1) && (policiesout=true)
+
 		# 1. Expectation on exogenous varaibles
 		mexpectation!(tempdryw, model.valuepay, model.grids.mmass)
 		ywexpectation!(expectedvaluepay, tempdryw, # here tempdry has the expectation over mshock 
@@ -109,8 +115,8 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		maxabs!(sub(reservesmaxtemp,1:1), tempdryw)
 		pricegap=reservesmaxtemp[1]
 		# Update Control
-		scal!(debtnum*resnum*ynum*regimenum, 1-solverparams.updatespeed*138/(resiternum+138), model.bondprice, 1 )
-		axpy!(solverparams.updatespeed*138/(resiternum+138), newbondprice, model.bondprice )
+		scal!(debtnum*resnum*ynum*regimenum, 1-updatespeed, model.bondprice, 1 )
+		axpy!(updatespeed, newbondprice, model.bondprice )
 		# update policies
 	    if policiesout
 			setindex!(model.policies.debt, debtpolicy, :)

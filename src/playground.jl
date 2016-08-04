@@ -10,11 +10,11 @@ module playground
 		# Debt grid parameters
 		0.0,	# debtmin::Float64
 		1.02,	# debtmax::Float64
-		35,		# debtnum::Int64
+		52,		# debtnum::Int64
 		# Reserves grid parameters
 		0.0,		# resmin::Float64
 		1.0, 	# resmax::Float64
-		26,		# resnum::Int64
+		51,		# resnum::Int64
 		# Temporary (smoothing shock parameters)
 		0.01, 	# msigma::Float64
 		1.6,	# msdwidth::Float64
@@ -50,22 +50,23 @@ module playground
 	basesolverparams=SolverParams(
 		0.25, 	# updatespeed::Float64 
 		0, 		# startiternum::Int64
-		1,		# interprint::Int64 
-		3,	# itermax::Int64
+		25,		# interprint::Int64 
+		6001,	# itermax::Int64
 		1000, 	# intermediatesave::Int64
 		false,	# policiesout::Bool
 		1e-5, 	# valtol::Float64 
 		)
 
-	@time solvereservesmodel!(basemodel, basesolverparams)
-	@time solvereservesmodel!(basemodel, basesolverparams)	
-	# Simulate model
+	solvereservesmodel!(basemodel, basesolverparams)	
+	
+	# 3 Results
+	# 3.1. Simulate model
 	basesimul=ModelSimulation(100000)
 	simulatemodel!(basesimul,basemodel)
-	# 4. Obtain moments
+	# 3.2. Obtain moments
 	basemoments=ModelMoments()
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
-	# Moments Output
+	# 3.3 Print Moments
 	println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	|")
 	println("---------------------------------------------------------------------------------------------")
 	showcompact(basemoments.debtmean)
@@ -81,7 +82,7 @@ module playground
 	showcompact(basemoments.defaultchoicemean)
 	println("	|	")
 	println("=============================================================================================")
-	
+	# 3.4. Save solved
 	@save "firstsolved.jld" basemodel basesimul basemoments
 	
 	
