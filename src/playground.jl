@@ -50,7 +50,7 @@ module playground
 	basesolverparams=SolverParams(
 		0.25, 	# updatespeed::Float64 
 		0, 		# startiternum::Int64
-		25,		# interprint::Int64 
+		1,		# interprint::Int64 
 		6001,	# itermax::Int64
 		1000, 	# intermediatesave::Int64
 		false,	# policiesout::Bool

@@ -5,7 +5,7 @@ using JLD
 
 export ComputationParams, EconParams, SolverParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
 export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
-export updatevaluepaydrm!, mthresholds!, mergethresholds!, defaultthresholds!
+export updatevaluepaydrm!, GGQthresholds!, defaultthresholds!
 export suddenstopthresholds!, integratethresholds!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!, reservesfigures
 
@@ -186,8 +186,7 @@ include("ywexpectation!.jl")
 include("solvedefaultvalue!.jl")
 include("solvereservesmodel!.jl")
 include("updatevaluepaydrm!.jl")	
-include("mthresholds!.jl")
-include("mergethresholds!.jl")
+include("GGQthresholds!.jl")
 include("defaultthresholds!.jl")
 include("suddenstopthresholds!.jl")
 include("integratethresholds!.jl")
