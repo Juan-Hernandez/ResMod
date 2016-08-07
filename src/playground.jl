@@ -16,8 +16,8 @@ module playground
 		1.0, 	# resmax::Float64
 		51,		# resnum::Int64
 		# Temporary (smoothing shock parameters)
-		0.01, 	# msigma::Float64
-		1.6,	# msdwidth::Float64
+		0.008, 	# msigma::Float64
+		2.0,	# msdwidth::Float64u
 		13,		# mnum::Int64
 		-100.0,	# thrmin::Float64
 		)
@@ -51,7 +51,7 @@ module playground
 		0.25, 	# updatespeed::Float64 
 		0, 		# startiternum::Int64
 		1,		# interprint::Int64 
-		6001,	# itermax::Int64
+		3000,	# itermax::Int64
 		1000, 	# intermediatesave::Int64
 		false,	# policiesout::Bool
 		1e-5, 	# valtol::Float64 
