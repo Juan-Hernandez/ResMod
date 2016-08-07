@@ -54,7 +54,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 
     # Main loop
 
-	while resiternum<itermax && ( valuegap>=solverparams.valtol || pricegap>=solverparams.valtol || !policiesout )
+	while resiternum<itermax && ( max(valuegap, pricegap, defaultgap)>=solverparams.valtol || !policiesout )
 		# 0. Output and update controls
 		# Increase iteration counter
 		resiternum+=1
@@ -70,7 +70,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		# Intermediate print and timing
 		(mod1(resiternum,iterprint)==1) && tic()
 		# Policies out in last iteration
-		(valuegap<solverparams.valtol) && (pricegap<solverparams.valtol) && (policiesout=true)
+		(max(valuegap, pricegap, defaultgap)>=solverparams.valtol) && (policiesout=true)
 		(resiternum==itermax-1) && (policiesout=true)
 
 		# 1. Expectation on exogenous varaibles
@@ -78,7 +78,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		ywexpectation!(expectedvaluepay, tempdryw, # here tempdry has the expectation over mshock 
 							model.grids.ytrans, model.grids.regimetrans,model.econparams.bbeta,tempdry)
 		
-		# 2. Solve value of default
+		# 2. update value of default
 		defaultgap=solvedefaultvalue!(model, expectedvaluepay, defaultflowutility, newvaluedefault, 
 								tempryw, reservesmaxtemp, reservesidtemp, temprr, tempry, solverparams.valtol)
 		# 3. Update value function: parallel for each set of exogenous states. 
@@ -160,7 +160,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
     	toc()
     	println("|")
 	end
-	policiesout && max(valuegap,pricegap)
+	policiesout && max(valuegap,pricegap,defaultgap)
 end # Function End
 
 solvereservesmodel!(model::ReservesModel)=solvereservesmodel!(model,SolverParams( ))

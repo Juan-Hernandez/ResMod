@@ -24,8 +24,8 @@ basecompuparams=ComputationParams(
 	1.0, 	# resmax::Float64
 	51,		# resnum::Int64
 	# Temporary (smoothing shock parameters)
-	0.01, 	# msigma::Float64
-	1.6,	# msdwidth::Float64
+	0.008, 	# msigma::Float64
+	2.0,	# msdwidth::Float64 (For convergence)
 	13,		# mnum::Int64
 	-100.0,	# thrmin::Float64
 	)

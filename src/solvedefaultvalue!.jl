@@ -2,8 +2,11 @@ function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float6
                             newvaluedefault::Array{Float64,3}, interimdefaultvalue::Array{Float64,3}, 
                             reservesmaxtemp::Array{Float64,2}, reservesidtemp::Array{Int64,2}, resrestemp::Array{Float64,2},
                             tempry::Array{Float64,2}, valtol::Float64)
-    defaultgap::Float64=10*valtol
-    while defaultgap>(1-model.econparams.bbeta)*valtol*0.001
+    
+    # No while loop, solved in general iteration
+
+    # defaultgap::Float64=10*valtol
+    # while defaultgap>(1-model.econparams.bbeta)*valtol*0.001
         # Expectations over future output and regime for default given current output, regime and FUTURE reserves.
         # Reshaping to use ywexpectation
         fill!(interimdefaultvalue,0.0) 
@@ -40,10 +43,12 @@ function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float6
         end
                  
         axpy!(-1.0, newvaluedefault, model.valuedefault)
+        # Slow update speed for default not necesary. Not depending on price but on Value
+        # when repaying, wich is updated slowly.
         maxabs!(sub(reservesmaxtemp, 1), model.valuedefault)
         defaultgap=reservesmaxtemp[1]        
         setindex!(model.valuedefault, newvaluedefault, :)                
-    end
+    # end
 	return defaultgap
 end
 
