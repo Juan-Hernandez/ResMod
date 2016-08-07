@@ -2,7 +2,6 @@ module playground
 	export basemodel
 	push!(LOAD_PATH,pwd())
 	using ReservesTypes
-	using JLD
 
 	basecompuparams=ComputationParams(
 		# Output Grid Lenght
@@ -29,17 +28,17 @@ module playground
 		# Risk free rate
 		0.01, 	# rfree::Float64 # 4% yearly
 		# Bond Maturity and coupon
-		0.05, 	# llambda::Float64 # 5 year avg maturity
-		0.03, 	# coupon:: Float64 
+		0.05, 	# llambda::Float64 # 5 year avg maturity (6% avg quarterly debt service)
+		0.0085, 	# coupon:: Float64 
 		# Expected Output grid parameters
-		0.93, 	# logOutputRho::Float64
-		0.076, 	# logOutputSigma::Float64
+		0.8, 	# logOutputRho::Float64
+		0.0716, 	# logOutputSigma::Float64
 		# Default output cost parameters
 		-0.1875,# defcost1::Float64
 		0.25, 	# defcost2::Float64
-		0.0385, # reentry::Float64
+		0.1, # reentry::Float64
 		# Sudden Stop Probability
-		16.0, 	# panicfrequency::Float64 -- One every 16 quarters
+		24.0, 	# panicfrequency::Float64 -- One every 24 quarters (25% of the time in panic)
 		8.0   # panicduration::Float64 -- 8 quarters
 		)
 	
