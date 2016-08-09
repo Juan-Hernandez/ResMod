@@ -92,7 +92,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		# 		expectedvaluepay[ :, :, 3, 1], model.cashinhandpay[ :, :, 3], model.bondprice[:,:,3,1],
 		# 		newvaluedefault[ :, 3], model.policies.reservesindefault[:, 3], 1, model.econparams, model.compuparams, model.grids, true )		
 		# pmap requires shared arrays for inplace! outputs
-		pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [sub(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
+			pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [sub(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
 				[sub(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [sub(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
 				[sub(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
 				[expectedvaluepay[ :, :, iyr] for iyr=1:exonum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum],

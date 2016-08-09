@@ -69,11 +69,10 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 			
 			# GGC algorithm.
 			thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
-							consexm, expvalue, grids.mextremes[1],		# Array inputs
+							consexm, expvalue, grids.mextremes,		# Array inputs
 							econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum,	# Scalar inputs
                             valuesatm::Array{Float64,2})			# Temporary Array inputs 
 			# Here thresholds were merged for all future reserves.
-
 			# 3.3 Enhance threshold with default decision
 			(thresnum, debt1)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
 								expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, valtol,

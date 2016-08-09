@@ -29,7 +29,7 @@ module playground
 		0.01, 	# rfree::Float64 # 4% yearly
 		# Bond Maturity and coupon
 		0.05, 	# llambda::Float64 # 5 year avg maturity (6% avg quarterly debt service)
-		0.0085, 	# coupon:: Float64 
+		0.0185, 	# coupon:: Float64 
 		# Expected Output grid parameters
 		0.8, 	# logOutputRho::Float64
 		0.0716, 	# logOutputSigma::Float64

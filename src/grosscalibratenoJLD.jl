@@ -1,6 +1,6 @@
 module grosscalibratenoJLD
 #
-#addprocs(24)
+addprocs(23)
 
 
 push!(LOAD_PATH,pwd())
@@ -9,8 +9,8 @@ export basemodel
 using ReservesTypes
 
 
-df1=Array{Float64}(18)
-df1=collect(linspace(-0.375,-0.1625,18))
+df1=Array{Float64}(9)
+df1=collect(linspace(-0.375,-0.075,9))
 
 basecompuparams=ComputationParams(
 	# Output Grid Lenght
@@ -35,7 +35,7 @@ tempvaluepay=Array{Float64}(basecompuparams.debtnum, basecompuparams.resnum, bas
 tempvaluedefault=Array{Float64}(basecompuparams.resnum, basecompuparams.ynum, 2)
 tempbondprice=Array{Float64}(basecompuparams.debtnum, basecompuparams.resnum, basecompuparams.ynum, 2)
 
-basesolverparams=SolverParams(0.25, 0, 2, 6, 5000)
+basesolverparams=SolverParams(0.25, 0, 25, 3000, 5000, false, 1e-05)
 
 for i=1:18
 
@@ -47,16 +47,16 @@ for i=1:18
 		0.01, 	# rfree::Float64 # 4% yearly
 		# Bond Maturity and coupon
 		0.05, 	# llambda::Float64 # 5 year avg maturity
-		0.03, 	# coupon:: Float64 
+		0.0185, 	# coupon:: Float64 
 		# Expected Output grid parameters
-		0.93, 	# logOutputRho::Float64
-		0.076, 	# logOutputSigma::Float64
+		0.8, 	# logOutputRho::Float64
+		0.0716, 	# logOutputSigma::Float64
 		# Default output cost parameters
 		df1[i],# defcost1::Float64
 		0.25, 	# defcost2::Float64
-		0.0385, # reentry::Float64
+		0.1, # reentry::Float64
 		# Sudden Stop Probability
-		16.0, 	# panicfrequency::Float64 -- One every 16 quarters
+		24.0, 	# panicfrequency::Float64 -- One every 16 quarters
 		8.0   # panicduration::Float64 -- 8 quarters
 		)
 	
@@ -80,8 +80,10 @@ for i=1:18
 	# 4. Obtain moments
 	basemoments=ModelMoments()
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
-	println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	|")
+	println(" defcost1 | debt	|  reserves  |	spravg	|	sprvar	|	defstat  |  defchoice  |")
 	println("---------------------------------------------------------------------------------------------")
+	showcompact(baseeconparams.defcost1)
+	print("	|	")
 	showcompact(basemoments.debtmean)
 	print("	|	")
 	showcompact(basemoments.reservesmean)
