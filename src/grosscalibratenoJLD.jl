@@ -8,9 +8,11 @@ export basemodel
 
 using ReservesTypes
 
-
-df1=Array{Float64}(9)
-df1=collect(linspace(-0.375,-0.075,9))
+defsumgrid=Array{Float64}(5)
+def2grid=Array{Float64}(5)
+sizegrid=25
+defsumgrid=collect(linspace(0.06, 0.14, 5))
+def2grid=collect(linspace(0.21, 0.29, 5))
 
 basecompuparams=ComputationParams(
 	# Output Grid Lenght
@@ -35,13 +37,13 @@ tempvaluepay=Array{Float64}(basecompuparams.debtnum, basecompuparams.resnum, bas
 tempvaluedefault=Array{Float64}(basecompuparams.resnum, basecompuparams.ynum, 2)
 tempbondprice=Array{Float64}(basecompuparams.debtnum, basecompuparams.resnum, basecompuparams.ynum, 2)
 
-basesolverparams=SolverParams(0.25, 0, 25, 3000, 5000, false, 1e-05)
+basesolverparams=SolverParams(0.25, 0, 100, 3000, 5000, false, 1e-05)
 
-for i=1:18
+for i=1:sizegrid
 
 	baseeconparams=EconParams(
 		# Consumer
-		0.985,	# bbeta::Float64
+		0.9875,	# bbeta::Float64
 		2,		# ggamma::Int64;  # HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 		# Risk free rate
 		0.01, 	# rfree::Float64 # 4% yearly
@@ -52,12 +54,12 @@ for i=1:18
 		0.8, 	# logOutputRho::Float64
 		0.0716, 	# logOutputSigma::Float64
 		# Default output cost parameters
-		df1[i],# defcost1::Float64
-		0.25, 	# defcost2::Float64
+		defsumgrid[div(i-1,5)+1]-def2grid[mod1(i,5)],# defcost1::Float64
+		def2grid[mod1(i,5)], 	# defcost2::Float64
 		0.1, # reentry::Float64
 		# Sudden Stop Probability
 		24.0, 	# panicfrequency::Float64 -- One every 16 quarters
-		8.0   # panicduration::Float64 -- 8 quarters
+		10.0   # panicduration::Float64 -- 8 quarters
 		)
 	
 	basemodel=ReservesModel(basecompuparams,baseeconparams)
@@ -76,26 +78,26 @@ for i=1:18
 	setindex!(tempbondprice,basemodel.bondprice,:)
 	# Simulate model
 	basesimul=ModelSimulation(100000)
-	simulatemodel!(basesimul,basemodel)
+	simulatemodel!(basesimul,basemodel,true)
 	# 4. Obtain moments
 	basemoments=ModelMoments()
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
-	println(" defcost1 | debt	|  reserves  |	spravg	|	sprvar	|	defstat  |  defchoice  |")
 	println("---------------------------------------------------------------------------------------------")
-	showcompact(baseeconparams.defcost1)
-	print("	|	")
+	println("  index  |    debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  |")
+	showcompact(i)
+	print("  |  ")
 	showcompact(basemoments.debtmean)
-	print("	|	")
+	print("  | ")
 	showcompact(basemoments.reservesmean)
-	print("	|	")
+	print("  | ")
 	showcompact(basemoments.spreadmean)
-	print("	|	")
+	print(" | ")
 	showcompact(basemoments.spreadsigma)
-	print("	|	")
+	print(" | ")
 	showcompact(basemoments.defaultstatemean)
-	print("	|	")
+	print("  | ")
 	showcompact(basemoments.defaultchoicemean)
-	println("	|	")
+	println("  |")
 	println("=============================================================================================")
 end	
 	

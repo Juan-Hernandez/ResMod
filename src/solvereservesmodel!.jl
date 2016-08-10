@@ -50,7 +50,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
     reservesidtemp=Array{Int64}(1, resnum)
     
 
-    println("	valuegap	|	pricegap	|	iternum")
+    println("        valuegap         |        pricegap         |   iternum  |")
 
     # Main loop
 
@@ -125,15 +125,14 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		end		
     	# 5.1 Print intermediate output
     	if mod1(resiternum,iterprint)==iterprint
-	    	print("	")
+	    	print("        ")
 		    showcompact(valuegap)
-	    	print("	|	")
+	    	print("       |	")
 	    	showcompact(100*pricegap) 
-	    	print("	| 	")
+	    	print("       | 	")
 	    	showcompact(resiternum)
-	    	print("	| ")
+	    	print("     |    ")
 	    	toc()
-	    	println()
 	    end
 	    # 5.2 Save intermediate step
 		if mod1(resiternum,intermediatesave)==intermediatesave
@@ -150,15 +149,14 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 	end
 
 	if resiternum%iterprint!=0 # Print last iteration
-    	print("	")
+    	print("        ")
 	    showcompact(valuegap)
-    	print("	|	")
+    	print("       |	")
     	showcompact(100*pricegap) 
-    	print("	|	")
+    	print("       | 	")
     	showcompact(resiternum)
-    	print("	|	")
-    	toc()
-    	println("|")
+    	print("     |    ")
+       	toc()
 	end
 	policiesout && max(valuegap,pricegap,defaultgap)
 end # Function End

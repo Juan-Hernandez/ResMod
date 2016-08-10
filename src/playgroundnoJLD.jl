@@ -36,9 +36,9 @@ module playground
 		0.8, 	# logOutputRho::Float64
 		0.0716, 	# logOutputSigma::Float64
 		# Default output cost parameters
-		-0.1875,# defcost1::Float64
+		-0.15,# defcost1::Float64
 		0.25, 	# defcost2::Float64
-		0.1, # reentry::Float64
+		0.125, # reentry::Float64
 		# Sudden Stop Probability
 		24.0, 	# panicfrequency::Float64 -- One every 16 quarters
 		8.0   # panicduration::Float64 -- 8 quarters

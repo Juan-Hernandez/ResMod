@@ -1,4 +1,4 @@
-function simulatemodel!(simulated::ModelSimulation, model::ReservesModel)
+function simulatemodel!(simulated::ModelSimulation, model::ReservesModel, fixseed::Bool=false)
 	# 0. preallocation and initialization
 
 
@@ -8,7 +8,12 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel)
 	simulated.reservesind[1]=cld(model.compuparams.resnum, 2)
 	simulated.defaultstate[1]=false
 	# Simulate all exogenous shocks: 1. y, 2. m, 3. regime, 4. reentry
-	rand!(simulated.randomshocks)
+	if fixseed
+		fixrng=MersenneTwister(7010)
+		rand!(fixrng, simulated.randomshocks)
+	else
+		rand!(simulated.randomshocks)
+	end
 	cumytrans=Array{Float64}(model.compuparams.ynum, model.compuparams.ynum)
 	cumsum!(cumytrans, model.grids.ytrans, 2)
 	cummmass=Array{Float64}(model.compuparams.mnum)
