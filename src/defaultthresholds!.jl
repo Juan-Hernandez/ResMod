@@ -1,11 +1,19 @@
 function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2}, thresnum::Int64, thresdefault::BitArray{1}, # Outputs
                             expvalue::Array{Float64,2}, valuedefault::Float64, defaultreserves::Int64, consexm::Array{Float64,2},
                             valtol::Float64, thrmin::Float64, ggamma::Int64, bbeta::Float64, mint1::Float64,
-							interimnewthresholds::Array{Float64,1}, interimthrespolicy::Array{Int64,2}, interimthresnum::Int64,
-                            vdiff::Float64, tempthres::Float64, lowthres::Float64,
-                            firstdebtnodef::Int64, toappend::Int64)
-    interimthresnum=0
-    firstdebtnodef=0
+							interimnewthresholds::Array{Float64,1}, interimthrespolicy::Array{Int64,2},
+                            
+    # 0. Allocate temporary variables
+    # 0.1 Temporary Integers                        
+    interimthresnum::Int64=0
+    firstdebtnodef::Int64=0
+    toappend::Int64=0
+    # 0.2 Temporary Floats
+    tempthres::Float64=0.0
+    lowthres::Float64=0.0
+    vdiff::Float64=0.0
+
+    # 1. Loop over current thresholds
     thresdefault[1:thresnum]=false # Initially no default.
     for idthres=1:thresnum # Run over current thresholds
         vdiff=valuedefault-expvalue[threspolicy[idthres, 1], threspolicy[idthres, 2]]

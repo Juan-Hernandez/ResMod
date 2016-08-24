@@ -1,20 +1,28 @@
 function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Float64,1}, massgrid::Array{Float64,1},# Outputs
 								thresholds::Array{Float64,1}, threspolicy::Array{Int64,2}, thresnum::Int64, thresdefault::BitArray{1},
 								mextremes::Array{Float64,1}, mmidpoints::Array{Float64,1}, bondprice::Array{Float64,2}, consexm::Array{Float64,2}, 
-								expvalue::Array{Float64,2}, valuedefault::Float64, econparams::EconParams,
-								mdiff::Float64, mstar::Float64, currentprice::Float64, currentvalue::Float64,
-								idmtop::Int64, idmlow::Int64)
+								expvalue::Array{Float64,2}, valuedefault::Float64, econparams::EconParams)
+	# 1. Unpack
 	llambda::Float64=econparams.llambda
 	coupon::Float64=econparams.coupon
 	ggamma::Int64=econparams.ggamma
 	bbeta::Float64=econparams.bbeta
-	idmtop=2 # First interval [mextremes[1],mextremes[2]
-	
-	mdiff=mextremes[2]-mextremes[1]
-	mstar=mextremes[1] # Current point of integration, will grow until mextremes[end]
+
+	# 2. Initialize
+	# 2.1 Temporary integer varaibles
+	idmtop::Int64=2 # First interval [mextremes[1],mextremes[2]
+	idmlow::Int64=1
+	# 2.2 Floating point temporary vars
+	mdiff::Float64=mextremes[2]-mextremes[1]
+	mstar::Float64=mextremes[1] # Current point of integration, will grow until mextremes[end]
+	currentprice::Float64=0.0
+	currentvalue::Float64=0.0
+	# 2.3 Fill output grids with zeros
 	fill!(valmgrid, 0.0)
 	fill!(pricegrid, 0.0)
 	fill!(massgrid, 0.0)
+
+	# 3. Loop
 	for idthres=1:thresnum # Loop over M,
 	    idmtop=findfirst( x->(x>=thresholds[idthres]) , mextremes)
 	    idmlow=findfirst( x->(x>mstar), mextremes)

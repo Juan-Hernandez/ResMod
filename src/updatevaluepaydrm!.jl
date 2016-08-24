@@ -18,15 +18,11 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 	threspolicy=Array{Int64}(compuparams.debtnum*compuparams.resnum, 2)
 	thresnum::Int64=0
 	thresdefault=falses(compuparams.debtnum*compuparams.resnum)
-	# New threshold vector, policies and size to be merged (smaller for fixed reserves)
-	newthresholds=Array{Float64}(compuparams.debtnum)
-	newthrespolicy=Array{Int64}(compuparams.debtnum)
-	newthresnum::Int64=0
 	# Minimum future debt given future reserves
 	debtminfres::Int64=0
 	# incidence of sudden stop on thresholds
 	relevantss::Bool=false
-
+	smallestMnodefdebt::Int64=0
 	# Interim allocations
 	valuesatm=Array{Float64}(compuparams.debtnum, compuparams.resnum)
 
@@ -34,11 +30,10 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 	interimthresholds=Array{Float64}(compuparams.debtnum)
 	interimthresdebt=Array{Int64}(compuparams.debtnum)
 
-	interimbigthresholds=Array{Float64}(compuparams.debtnum*(compuparams.resnum+1))
-	bigthresnum::Int64=0
+
 	interimthrespolicy=Array{Int64}(compuparams.debtnum*compuparams.resnum, 2)
 	interimthresnum::Int64=0
-	mergedsortidx=Array{Int64}(compuparams.debtnum*(compuparams.resnum+1) ) 
+
 	interimnewthresholds=Array{Float64}(compuparams.debtnum*(compuparams.resnum+1) )
 	# small grid for values
 	smallvalgrid=Array{Float64}(compuparams.mnum)
@@ -47,16 +42,9 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 	# small grid for policies
 	smallpolicygrid=Array{Int64}(compuparams.mnum, 2)
 	smalldefaultgrid=falses(compuparams.mnum)
+	
 
-	cons0::Float64=0.0
-	cons1::Float64=0.0
-	vdiff::Float64=0.0
-	tempthres::Float64=0.0
-	debt1::Int64=0
-	debt2::Int64=0
-	res1::Int64=0
-	res2::Int64=0
-	tempindex::Int64=0
+
 
 	for ires=1:compuparams.resnum
 		# Consumption excluding M given future reserves.
@@ -71,36 +59,33 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 			thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
 							consexm, expvalue, grids.mextremes,		# Array inputs
 							econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum,	# Scalar inputs
-                            valuesatm::Array{Float64,2})			# Temporary Array inputs 
+                            valuesatm)			# Temporary Array inputs 
 			# Here thresholds were merged for all future reserves.
 			# 3.3 Enhance threshold with default decision
-			(thresnum, debt1)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
+			(thresnum, smallestMnodefdebt)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
 								expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, valtol,
 								compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes[1],
-								interimnewthresholds, interimthrespolicy, interimthresnum,
-								vdiff, tempthres, cons0,
-								debt1, res1)
+								interimnewthresholds, interimthrespolicy)
 			# 3.4 Check Sudden Stop impact
 			relevantss=false
 			if regime==2
-				if (debt1!=0) && (debt1>grids.debtmaxss[idebt])
-					# From defaultthresholds debt1 is the index of the first debt1 consistent with no default (lowest m)
-					# if debt1=0 then default for all mshocks and no need to check SS
+				if (smallestMnodefdebt!=0) && (smallestMnodefdebt>grids.debtmaxss[idebt])
+					# From defaultthresholds smallestMnodefdebt is the index of the debt choice at the smallest M-shock 
+					# consistent with no default. If smallestMnodefdebt=0 then default for all mshocks and no need to 
+					# check SS. If it is positive but smaller than maxdebtss whenever repay is optimal it is still 
+					# optimal without new lending, hence thresholds stay the same. 
+					# Else, find new thresholds
 					(thresnum,relevantss)=suddenstopthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs	
                             	expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, grids.debtmaxss[idebt],
                             	valtol, compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes,
-								compuparams.resnum, interimnewthresholds, interimthrespolicy, interimthresnum,
-								vdiff, tempthres, cons0, # cons0: token temporary Float64
-                            	debtminfres, res1, relevantss)
+								compuparams.resnum, interimnewthresholds, interimthrespolicy, interimthresnum)
 				end
 			end
 			# 3.5 Integration
 			integratethresholds!(smallvalgrid,	smallpricegrid, smallmassgrid,# Outputs
 									thresholds, threspolicy, thresnum, thresdefault,
 									grids.mextremes, grids.mmidpoints, bondprice, consexm, expvalue,
-									valuedefault[ires], econparams, 
-									vdiff, tempthres, cons0, cons1,
-									res2, res1)
+									valuedefault[ires], econparams)
 			newvaluepaydrm[idebt, ires, :]=smallvalgrid
 			newbondprice[idebt, ires]=BLAS.dot(compuparams.mnum,grids.mmass,1,smallpricegrid,1)
 			# 3.6 Get policies on grid.

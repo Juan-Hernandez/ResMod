@@ -1,17 +1,26 @@
 function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2}, thresnum::Int64, thresdefault::BitArray{1}, # Outputs
                             	expvalue::Array{Float64,2}, valuedefault::Float64, defresoptim::Int64, consexm::Array{Float64,2}, debtmaxss::Int64,
                             	valtol::Float64, thrmin::Float64, ggamma::Int64, bbeta::Float64, mextremes::Array{Float64,1}, resnum::Int64, 
-                            	interimnewthresholds::Array{Float64,1}, interimthrespolicy::Array{Int64,2}, interimthresnum::Int64,	
-								vdiff::Float64, tempthres::Float64, minthres::Float64,
-                            	debtminfres::Int64, toappend::Int64, relevantss::Bool)
+                            	interimnewthresholds::Array{Float64,1}, interimthrespolicy::Array{Int64,2}, interimthresnum::Int64)
     # Find thresholds for default if Sudden Stop (SS). THIS IS NOT THE SAME AS PUTTING AN UPPER BOUND ON DEBT!
     # This is important for solution. If the threshold for default if SS is mSS, then for all M's greater than mSS
     # the debt is unconstrained. This is, if m > mSS then V-(m) > X and unique Nash Equilibrium is lending which
     # leads to payoffs V+(m) and 0. Hence we must find the mSS threshold.
     # 
-    # Compare all feasible debts against default. Get smallest threshold
-    relevantss=true 	# In principle Sudden Stop will be relevant
-    minthres=-thrmin 	# Same as +MaxThreshold, always default
+    
+    
+    # 0. Allocate temporary variables
+    # 0.1 Temp Integers  
+    toappend::Int64=0
+    debtminfres::Int64=0
+    # 0.2. Temp floats
+    minthres::Float64=-thrmin   # Same as +MaxThreshold, always default
+    tempthres::Float=NaN
+    vdiff::Float64=NaN
+    # 0.3 Tempo booleans
+    relevantss::Bool=true   # In principle Sudden Stop will be relevant
+
+    # 1. Compare all feasible debts against default. Get smallest threshold
     for idftres=1:resnum 	# Check all pairs of reserves and debt
 		debtminfres=findfirst(x->(x>mextremes[1]), consexm[ :, idftres] )
 		if debtminfres!=0
