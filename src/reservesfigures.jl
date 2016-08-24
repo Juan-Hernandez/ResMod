@@ -4,6 +4,9 @@ function reservesfigures(model::ReservesModel, simulated::ModelSimulation, momen
 	debtpoints=Array{Float64}(4)
 	reservespoints=Array{Float64}(4)
 	outputpoints=Array{Float64}(4)
+	detnum=model.compuparams.debtnum
+	resnum=model.compuparams.resnum
+	ynum=model.compuparams.ynum
 
 	# 1. Extra matrices for plot	
 	bondspread=Array{Float64}( model.compuparams.debtnum, model.compuparams.resnum, model.compuparams.ynum, 2)
