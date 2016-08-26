@@ -94,14 +94,14 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		# 		expectedvaluepay[ :, :, 3, 1], model.cashinhandpay[ :, :, 3], model.bondprice[:,:,3,1],
 		# 		newvaluedefault[ :, 3], model.policies.reservesindefault[:, 3], 1, model.econparams, model.compuparams, model.grids, true )		
 		# pmap requires shared arrays for inplace! outputs
-			pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [sub(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
-				[sub(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [sub(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
-				[sub(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
-				[expectedvaluepay[ :, :, iyr] for iyr=1:exonum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum],
-				[model.bondprice[ :, :, iyr] for iyr=1:exonum], [newvaluedefault[ :, iyr] for iyr=1:exonum], 
-				[model.policies.reservesindefault[:, iyr] for iyr=1:exonum], [cld(iyr, ynum) for iyr=1:exonum], 
-				repeated( solverparams.valtol, exonum), repeated( model.econparams, exonum), repeated( model.compuparams, exonum), 
-				repeated( model.grids, exonum), repeated(policiesout, exonum) )
+		pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [sub(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
+			[sub(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [sub(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
+			[sub(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
+			[expectedvaluepay[ :, :, iyr] for iyr=1:exonum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum],
+			[model.bondprice[ :, :, iyr] for iyr=1:exonum], [newvaluedefault[ :, iyr] for iyr=1:exonum], 
+			[model.policies.reservesindefault[:, iyr] for iyr=1:exonum], [cld(iyr, ynum) for iyr=1:exonum], 
+			repeated( solverparams.valtol, exonum), repeated( model.econparams, exonum), repeated( model.compuparams, exonum), 
+			repeated( model.grids, exonum), repeated(policiesout, exonum) )
 		# 4. Find new price: take expectation over regime and output
 		ywexpectation!(tempdryw, newbondprice, 
 							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),

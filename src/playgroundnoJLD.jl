@@ -1,5 +1,5 @@
 module playgroundnoJLD
-	addprocs(25)
+	# addprocs(25)
 	# export basemodel
 	push!(LOAD_PATH,pwd())
 	using ReservesTypes
@@ -36,12 +36,12 @@ module playgroundnoJLD
 		0.8, 	# logOutputRho::Float64
 		0.0716, 	# logOutputSigma::Float64
 		# Default output cost parameters
-		-0.1875,# defcost1::Float64
-		0.25, 	# defcost2::Float64
+		-0.5,# defcost1::Float64
+		0.62, 	# defcost2::Float64
 		0.1, # reentry::Float64
 		# Sudden Stop Probability
 		32.0, 	# panicfrequency::Float64 -- One every 16 quarters
-		6.0   # panicduration::Float64 -- 8 quarters
+		8.0   # panicduration::Float64 -- 8 quarters
 		)
 	
 	basemodel=ReservesModel(basecompuparams,baseeconparams);
@@ -51,8 +51,8 @@ module playgroundnoJLD
 	basesolverparams=SolverParams(
 		0.25, 	# updatespeed::Float64 
 		0, 		# startiternum::Int64
-		200,	# interprint::Int64 
-		1200,	# itermax::Int64
+		1,	# interprint::Int64 
+		1000,	# itermax::Int64
 		4000, 	# intermediatesave::Int64
 		false,	# policiesout::Bool
 		1e-5, 	# valtol::Float64 

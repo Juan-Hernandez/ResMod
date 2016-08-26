@@ -15,7 +15,7 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
     debtminfres::Int64=0
     # 0.2. Temp floats
     minthres::Float64=-thrmin   # Same as +MaxThreshold, always default
-    tempthres::Float=NaN
+    tempthres::Float64=NaN
     vdiff::Float64=NaN
     # 0.3 Tempo booleans
     relevantss::Bool=true   # In principle Sudden Stop will be relevant

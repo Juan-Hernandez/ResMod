@@ -1,7 +1,7 @@
 function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2}, thresnum::Int64, thresdefault::BitArray{1}, # Outputs
                             expvalue::Array{Float64,2}, valuedefault::Float64, defaultreserves::Int64, consexm::Array{Float64,2},
                             valtol::Float64, thrmin::Float64, ggamma::Int64, bbeta::Float64, mint1::Float64,
-							interimnewthresholds::Array{Float64,1}, interimthrespolicy::Array{Int64,2},
+							interimnewthresholds::Array{Float64,1}, interimthrespolicy::Array{Int64,2})
                             
     # 0. Allocate temporary variables
     # 0.1 Temporary Integers                        
