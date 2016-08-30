@@ -13,8 +13,8 @@ using Sobol
 
 # 1.1 Sobol points over calibrated parameter box 
 
-# Vector [beta, par1, par2, reentry, 1/freq]
-calsequence=SobolSeq(4, [0.95, 0.01, 0.1, 0.025 ], [0.99, 0.09, 1.0, 0.0625])
+# Vector [beta, par1, par2, 1/freq]
+calsequence=SobolSeq(4, [0.97, 0.01, 0.1, 0.025 ], [0.99, 0.09, 1.0, 0.0625])
 # par1 is such that proportinoal cost at y=0.9  is (y-y_def)/y= d1+0.9d2 = par1
 # par 2 is the derivative loss at y=0.9: d y_def/ dy = 1-d1-1.8d2 = 1 - par2  
 
@@ -42,10 +42,11 @@ basesolverparams=SolverParams(0.25, 0, 0, 1000, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
 iternum=0
-itermax=4096
-println("---------------------------------------------------------------------------------------------")
-println("        parvec         |    debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  |")
-	
+itermax=2048
+calout=open("sobolcalout.txt","a")
+println(calout, "-------------------------------------------------------------------------------------------------------")
+println(calout, "   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  |        parvec         |")
+flush(calout)
 for parvec in calsequence
 	iternum+=1
 
@@ -93,24 +94,29 @@ for parvec in calsequence
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
 	
 	# 5. Print relevans moments
-	print("     ")
-	showcompact(parvec)
-	print("     |  ")
-	showcompact(basemoments.debtmean)
-	print("  | ")
-	showcompact(basemoments.reservesmean)
-	print("  | ")
-	showcompact(basemoments.spreadmean)
-	print(" | ")
-	showcompact(basemoments.spreadsigma)
-	print(" | ")
-	showcompact(basemoments.defaultstatemean)
-	print("  | ")
-	showcompact(basemoments.defaultchoicemean)
-	println("  |")
+	print(calout, "  ")
+	showcompact(calout, basemoments.debtmean)
+	print(calout, "  | ")
+	showcompact(calout, basemoments.reservesmean)
+	print(calout, "  | ")
+	showcompact(calout, basemoments.spreadmean)
+	print(calout, " | ")
+	showcompact(calout, basemoments.spreadsigma)
+	print(calout, " | ")
+	showcompact(calout, basemoments.defaultstatemean)
+	print(calout, "  | ")
+	showcompact(calout, basemoments.defaultchoicemean)
+	print(calout, "  | ")
+	for idpar=1:4
+		showcompact(calout, parvec[idpar])
+		print(calout, " | ")
+	end
+	println(calout, " ")
 	iternum==itermax && break
+	mod1(iternum,50)==50 && flush(calout)
 end	
 
-println("=============================================================================================")
+println(calout, "=============================================================================================")
+close(calout)
 end # Module end
 
