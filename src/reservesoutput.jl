@@ -13,6 +13,8 @@ export basemodel, basesimul, basemoments, reservesfigures
 # 1. Make figures
 include("reservesfigures.jl")
 reservesfigures(basemodel, basesimul, basemoments)
-
+# 2. Make tables
+include("reservestables.jl")
+reservestables(basemodel, basesimul, basemoments)
 #########################
 end # module end
