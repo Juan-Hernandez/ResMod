@@ -7,7 +7,7 @@ export ComputationParams, EconParams, SolverParams, ModelGrids, ReservesModel, M
 export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
 export updatevaluepaydrm!, GGQthresholds!, defaultthresholds!
 export suddenstopthresholds!, integratethresholds!, getpolicies!
-export simulatemodel!, moutputregimeexpectation!, getmoments!, reservesfigures
+export simulatemodel!, moutputregimeexpectation!, getmoments!
 
 
 immutable ComputationParams
@@ -170,9 +170,14 @@ type ModelMoments
 	spreadmean::Float64
 	defaultstatemean::Float64
 	defaultchoicemean::Float64
+	debt2gdpmean::Float64
+	reserves2gdpmean::Float64
 	# Variances
 	outputsigma::Float64
 	spreadsigma::Float64
+	# Correlations
+	spreadXgdp::Float64
+	spreadXgrowth::Float64
 	function ModelMoments()
 		new()
 	end
@@ -192,7 +197,7 @@ include("suddenstopthresholds!.jl")
 include("integratethresholds!.jl")
 include("priceexpectation!.jl")
 include("getpolicies!.jl")
-# Simulation and Figures
+# Simulation 
 include("simulatemodel!.jl")
 include("getmoments!.jl")
 include("moutputregimeexpectation!.jl")
