@@ -1,15 +1,12 @@
 #!/bin/sh
 #PBS -N calsobolPBS
-#PBS -l nodes=1:ppn=26
-#PBS -l walltime=07:00:00:00
+#PBS -l nodes=5:ppn=10
+#PBS -l walltime=03:00:00:00
 
-cd /data/scratch/m1dsw00/JuanStuff/ReservesMod/src
+ ./etc/profile.d/modules.sh
+module load Julia
 
-/opt/julia/0.4.2/bin/julia calsobRho.jl > calRhoOut.txt
-
-/opt/julia/0.4.2/bin/julia calsobLambda.jl > calLambdaOut.txt
-
-/opt/julia/0.4.2/bin/julia calsobReentry.jl > calReentryOut.txt
+julia calsobReentry.jl > hawkout.txt
 
 
 

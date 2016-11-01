@@ -1,6 +1,6 @@
 module calsobReentry
 #
-addprocs(25)
+addprocs(12)
 
 
 push!(LOAD_PATH,pwd())
@@ -42,10 +42,10 @@ basesolverparams=SolverParams(0.25, 0, 0, 1000, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
 iternum=0
-itermax=2
-calout=open("calreentryout.txt","a")
-println(calout, "---------------------------------------------------------------------------------------------------------------------------------")
-println(calout, "   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |        parvec         |")
+itermax=128
+calout=open("calreentry0125.txt","a")
+println(calout, "--------------------------------------------------------------------------------------------------------------------------------------------------")
+println(calout, "                 parvec                 |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
 flush(calout)
 for parvec in calsequence
 	iternum+=1
@@ -69,10 +69,10 @@ for parvec in calsequence
 				# Default output cost parameters
 		2*parvec[2]-parvec[3],			# defcost1::Float64
 		(parvec[3]-parvec[2])/0.9,		# defcost2::Float6
-		0.0833,	 						# reentry::Float64
+		0.125,	 						# reentry::Float64
 				# Sudden Stop Probability
 		1.0/parvec[4], 					# panicfrequency::Float64 -- One every 32 quarters
-		8.0   							# panicduration::Float64 -- 8 quarters
+		6.0   							# panicduration::Float64 -- 8 quarters
 		)
 	
 	# 2.2 Intialize model object
@@ -95,6 +95,10 @@ for parvec in calsequence
 	
 	# 5. Print relevans moments
 	print(calout, "  ")
+	for idpar=1:4
+		showcompact(calout, parvec[idpar])
+		print(calout, " | ")
+	end
 	showcompact(calout, basemoments.debtmean)
 	print(calout, "  | ")
 	showcompact(calout, basemoments.reservesmean)
@@ -109,15 +113,11 @@ for parvec in calsequence
 	print(calout, "  | ")
 	showcompact(calout, basemoments.spreadXgrowth)
 	print(calout, "  | ")
-	showcompact(calout, maximum(valuegap,pricegap,defaultgap) )
+	showcompact(calout, maximum([valuegap,pricegap,defaultgap]) )
 	print(calout, "  | ")
-	for idpar=1:4
-		showcompact(calout, parvec[idpar])
-		print(calout, " | ")
-	end
-	println(calout, " ")
-	iternum==itermax && break
+	# 6. intermediate flush and exit
 	mod1(iternum,50)==50 && flush(calout)
+	iternum==itermax && break
 end	
 
 println(calout, "=============================================================================================")

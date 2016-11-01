@@ -1,6 +1,6 @@
-module calsobLambda
+module calibratesobol
 #
-addprocs(25)
+# addprocs(25)
 
 
 push!(LOAD_PATH,pwd())
@@ -41,11 +41,12 @@ basecompuparams=ComputationParams(
 basesolverparams=SolverParams(0.25, 0, 0, 1000, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
-iternum=0
+iternum=150
+skip(calsequence,iternum)
 itermax=512
-calout=open("callambdaout.txt","a")
+calout=open("sobolDEBUG.txt","a")
 println(calout, "---------------------------------------------------------------------------------------------------------------------------------")
-println(calout, "   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |        parvec         |")
+println(calout, "        parvec         |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
 flush(calout)
 for parvec in calsequence
 	iternum+=1
@@ -61,7 +62,7 @@ for parvec in calsequence
 				# Risk free rate
 		0.01, 							# rfree::Float64 # 4% yearly
 				# Bond Maturity and coupon
-		0.0625, 						# llambda::Float64 # 5 year avg maturity
+		0.05, 							# llambda::Float64 # 5 year avg maturity
 		0.0185, 						# coupon:: Float64 
 				# Expected Output grid parameters
 		0.8, 							# logOutputRho::Float64
@@ -94,7 +95,10 @@ for parvec in calsequence
 	flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
 	
 	# 5. Print relevans moments
-	print(calout, "  ")
+	for idpar=1:4
+		showcompact(calout, parvec[idpar])
+		print(calout, " |  ")
+	end
 	showcompact(calout, basemoments.debtmean)
 	print(calout, "  | ")
 	showcompact(calout, basemoments.reservesmean)
@@ -110,14 +114,10 @@ for parvec in calsequence
 	showcompact(calout, basemoments.spreadXgrowth)
 	print(calout, "  | ")
 	showcompact(calout, maximum([valuegap,pricegap,defaultgap]) )
-	print(calout, "  | ")
-	for idpar=1:4
-		showcompact(calout, parvec[idpar])
-		print(calout, " | ")
-	end
-	println(calout, " ")
+	println(calout, "  |")
+	# 6. intermediate flush and exit
+	mod1(iternum,10)==10 && flush(calout)
 	iternum==itermax && break
-	mod1(iternum,50)==50 && flush(calout)
 end	
 
 println(calout, "=============================================================================================")

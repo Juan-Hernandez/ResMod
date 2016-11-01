@@ -42,10 +42,10 @@ basesolverparams=SolverParams(0.25, 0, 0, 1000, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
 iternum=0
-itermax=2
+itermax=512
 calout=open("calrhoout.txt","a")
 println(calout, "---------------------------------------------------------------------------------------------------------------------------------")
-println(calout, "   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |        parvec         |")
+println(calout, "        parvec         |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
 flush(calout)
 for parvec in calsequence
 	iternum+=1
@@ -95,6 +95,10 @@ for parvec in calsequence
 	
 	# 5. Print relevans moments
 	print(calout, "  ")
+	for idpar=1:4
+		showcompact(calout, parvec[idpar])
+		print(calout, " | ")
+	end
 	showcompact(calout, basemoments.debtmean)
 	print(calout, "  | ")
 	showcompact(calout, basemoments.reservesmean)
@@ -111,16 +115,13 @@ for parvec in calsequence
 	print(calout, "  | ")
 	showcompact(calout, maximum(valuegap,pricegap,defaultgap) )
 	print(calout, "  | ")
-	for idpar=1:4
-		showcompact(calout, parvec[idpar])
-		print(calout, " | ")
-	end
-	println(calout, " ")
-	iternum==itermax && break
+	# 6. intermediate flush and exit
 	mod1(iternum,50)==50 && flush(calout)
+	iternum==itermax && break
 end	
 
 println(calout, "=============================================================================================")
 close(calout)
+nothing
 end # Module end
 
