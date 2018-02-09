@@ -8,7 +8,7 @@ export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solv
 export updatevaluepaydrm!, GGQthresholds!, defaultthresholds!
 export suddenstopthresholds!, integratethresholds!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!
-
+export solvereservesmodelserial!
 
 immutable ComputationParams
 	# Output grid lenght
@@ -178,6 +178,8 @@ type ModelMoments
 	# Correlations
 	spreadXgdp::Float64
 	spreadXgrowth::Float64
+	deltaspreadXgdp::Float64
+	deltaspreadXgrowth::Float64
 	function ModelMoments()
 		new()
 	end
@@ -197,6 +199,9 @@ include("suddenstopthresholds!.jl")
 include("integratethresholds!.jl")
 include("priceexpectation!.jl")
 include("getpolicies!.jl")
+# serial
+include("solvereservesmodelserial!.jl")
+
 # Simulation 
 include("simulatemodel!.jl")
 include("getmoments!.jl")

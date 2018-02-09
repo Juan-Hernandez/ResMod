@@ -41,4 +41,8 @@ function getmoments!(moments::ModelMoments, oldsimul::ModelSimulation, grids::Mo
 								simulated.output[!simulated.defaultstate[1:(end-1)] ] )
 	moments.spreadXgrowth=cor( simulated.bondspread[!simulated.defaultstate[1:(end-1)] ][2:end],
 								diff( log(simulated.output[!simulated.defaultstate[1:(end-1)] ]) ) )
+	moments.deltaspreadXgdp=cor( diff( simulated.bondspread[!simulated.defaultstate[1:(end-1)] ] ), 
+								simulated.output[!simulated.defaultstate[1:(end-1)] ][2:end] )
+	moments.deltaspreadXgrowth=cor( diff(simulated.bondspread[!simulated.defaultstate[1:(end-1)] ]),
+								diff( log(simulated.output[!simulated.defaultstate[1:(end-1)] ]) ) )
 end

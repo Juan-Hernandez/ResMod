@@ -7,10 +7,10 @@ ynum=model.compuparams.ynum
 # 1. Set directory
 currdir=pwd()
 # Inside ReservesMod
-# cd("..\\..\\tables")
+cd("..\\..\\tables")
 # Latex directory (uncomment to put output on JMP directly) 
 # TEST BEFORE
-cd("..\\..\\..\\Latex\\Tables")
+# cd("..\\..\\..\\Latex\\Tables")
 
 # 2. momentsparams table
 

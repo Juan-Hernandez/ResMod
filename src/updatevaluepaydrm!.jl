@@ -55,7 +55,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 			# Consumption excluding M given future reserves, future debt.
 			broadcast!(+, consexm, cashinhandpay[idebt,ires], -grids.reserves'/(1+econparams.rfree), consexm)
 			
-			# GGC algorithm.
+			# 3.1-2 GGQ algorithm.
 			thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
 							consexm, expvalue, grids.mextremes,		# Array inputs
 							econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum,	# Scalar inputs

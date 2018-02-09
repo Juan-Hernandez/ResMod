@@ -56,7 +56,8 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel, fixsee
 			simulated.debtind[idper+1]=model.policies.debt[longstateindex]
 			simulated.reservesind[idper+1]=model.policies.reserves[longstateindex]
 			simulated.defaultstate[idper+1]=false 
-			simulated.bondprice[idper]=model.bondprice[ simulated.debtind[idper], simulated.reservesind[idper], simulated.yind[idper], simulated.regime[idper] ]
+			# Bond price today depends on debt and reserves tomorrow
+			simulated.bondprice[idper]=model.bondprice[ simulated.debtind[idper+1], simulated.reservesind[idper+1], simulated.yind[idper], simulated.regime[idper] ]
 			simulated.bondspread[idper]=((model.econparams.coupon*(1-model.econparams.llambda)+model.econparams.llambda)/simulated.bondprice[idper]-
 											model.econparams.llambda+1)^4-(1+model.econparams.rfree)^4
 		end

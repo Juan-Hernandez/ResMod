@@ -1,11 +1,11 @@
-function serialmomentsimulator!(compuparams::ComputationParams, econparams::EconParams, solverparams::SolverParams, outfilename::AbstractString)
+function parallelmomentsimulator!(compuparams::ComputationParams, econparams::EconParams, solverparams::SolverParams, outfilename::AbstractString)
 	
 	innermodel=ReservesModel(compuparams,econparams)
 	modelinitialize!(innermodel)
 	
 	# 2.3. # Call solver routine
 
-	(resiternum,valuegap,pricegap,defaultgap)=solvereservesmodelserial!(innermodel, solverparams)	
+	(resiternum,valuegap,pricegap,defaultgap)=solvereservesmodel!(innermodel, solverparams)	
 	
 	# 3. Simulate model with seed=true
 	

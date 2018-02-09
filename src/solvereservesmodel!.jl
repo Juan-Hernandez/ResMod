@@ -33,7 +33,6 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 	expectedvaluepay=Array{Float64}(debtnum,resnum,ynum,regimenum)
 	# Preallocate intermediate stages
 
-
 	# Flow utility matrix after default and chossing FUTURE reserves.
 	# (futurereserves, currentreserves, currentoutput)
 	defaultflowutility=Array{Float64}(resnum,resnum,ynum)
