@@ -18,22 +18,22 @@ function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float6
                         reshape(tempry,(1,size(tempry)...))) # tempry
 
         # gemm!('N', 'T', (1-model.econparams.reentry)*model.econparams.bbeta*(1-model.econparams.norm2ss), 
-        # 	sub(model.valuedefault, :, :, 1), model.grids.ytrans, 1.0, sub(interimdefaultvalue, :, :, 1) )
+        # 	view(model.valuedefault, :, :, 1), model.grids.ytrans, 1.0, view(interimdefaultvalue, :, :, 1) )
         # gemm!('N', 'T', (1-model.econparams.reentry)*model.econparams.bbeta*(1-model.econparams.ss2ss), 
-        # 	sub(model.valuedefault, :, :, 1), model.grids.ytrans, 1.0, sub(interimdefaultvalue, :, :, 2) )
+        # 	view(model.valuedefault, :, :, 1), model.grids.ytrans, 1.0, view(interimdefaultvalue, :, :, 2) )
         # gemm!('N', 'T', (1-model.econparams.reentry)*model.econparams.bbeta*model.econparams.norm2ss, 
-        # 	sub(model.valuedefault, :, :, 2), model.grids.ytrans, 1.0, sub(interimdefaultvalue, :, :, 1) )
+        # 	view(model.valuedefault, :, :, 2), model.grids.ytrans, 1.0, view(interimdefaultvalue, :, :, 1) )
         # gemm!('N', 'T', (1-model.econparams.reentry)*model.econparams.bbeta*model.econparams.ss2ss, 
-        # 	sub(model.valuedefault, :, :, 2), model.grids.ytrans, 1.0, sub(interimdefaultvalue, :, :, 2) )
+        # 	view(model.valuedefault, :, :, 2), model.grids.ytrans, 1.0, view(interimdefaultvalue, :, :, 2) )
 
         regimenum=size(model.grids.regimetrans,1)
         for iregime=1:regimenum
             # update to continuation value, including reentry
-            axpy!(model.econparams.reentry, slice(expectedvaluepay,1,:,:,iregime), sub( interimdefaultvalue, :, :, iregime) )
+            Base.LinAlg.BLAS.axpy!(model.econparams.reentry, view(expectedvaluepay,1,:,:,iregime), view( interimdefaultvalue, :, :, iregime) )
 			# Find optimal reserves for each y
             for iy=1:model.compuparams.ynum
-				broadcast!(+, resrestemp, sub(defaultflowutility, :, :, iy), sub(interimdefaultvalue, :, iy,iregime) )
-                #maximum!(sub(reservesmaxtemp , 1,:) , resrestemp)
+				broadcast!(+, resrestemp, view(defaultflowutility, :, :, iy), view(interimdefaultvalue, :, iy,iregime) )
+                #maximum!(view(reservesmaxtemp , 1,:) , resrestemp)
                 Base.findmax!(reservesmaxtemp , reservesidtemp, resrestemp)
                 # Need to turn reservesindex from linear to cartesian, just care about first component
                 broadcast!(mod1, reservesidtemp, reservesidtemp, model.compuparams.resnum)  
@@ -42,10 +42,10 @@ function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float6
             end
         end
                  
-        axpy!(-1.0, newvaluedefault, model.valuedefault)
+        Base.LinAlg.BLAS.axpy!(-1.0, newvaluedefault, model.valuedefault)
         # Slow update speed for default not necesary. Not depending on price but on Value
         # when repaying, wich is updated slowly.
-        maxabs!(sub(reservesmaxtemp, 1), model.valuedefault)
+        maxabs!(view(reservesmaxtemp, 1), model.valuedefault)
         defaultgap=reservesmaxtemp[1]        
         setindex!(model.valuedefault, newvaluedefault, :)                
     # end

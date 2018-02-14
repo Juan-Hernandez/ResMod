@@ -13,7 +13,7 @@ function ywexpectation!(expected::Array{Float64,4}, current::DenseArray{Float64,
 		for ifuty=1:ynum
 			broadcast!( *, tempdry, current[:,:,ifuty,ifutreg], reshape(ytrans[:,ifuty], 1, 1, ynum))
 			@inbounds for ireg=1:regimenum
-				axpy!( scalar*regimetrans[ireg, ifutreg], tempdry, sub(expected, :, :, :, ireg) )
+				Base.LinAlg.BLAS.axpy!( scalar*regimetrans[ireg, ifutreg], tempdry, view(expected, :, :, :, ireg) )
 			end
 		end
 	end

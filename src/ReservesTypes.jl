@@ -199,8 +199,6 @@ include("suddenstopthresholds!.jl")
 include("integratethresholds!.jl")
 include("priceexpectation!.jl")
 include("getpolicies!.jl")
-# serial
-include("solvereservesmodelserial!.jl")
 
 # Simulation 
 include("simulatemodel!.jl")

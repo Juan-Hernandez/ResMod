@@ -1,4 +1,4 @@
-function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
+function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 
 	resiternum::Int64=solverparams.startiternum
 	iterprint::Int64=solverparams.iterprint 
@@ -85,17 +85,17 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 		# 3. Update value function: parallel for each set of exogenous states. 
 			# Here i need to use comprehensions to pass values (no need to predefine oustide the loop)
 			# pmap is enough since function return is inplaced
-			# Careful, use sub() for those arrays you want to be referenced. [:,:,:] is good for those that can be copied.
+			# Careful, use view() for those arrays you want to be referenced. [:,:,:] is good for those that can be copied.
 			# Since we are pmapping, 		
 """ For prototyping we use just one evaluation, pmap below"""		
-		# updatevaluepaydrm!( sub(newvaluepay, :, :, :, 3), sub(newbondprice, :, :, 3), 
-		# 		sub(debtpolicy, :, :, :, 3), sub(reservespolicy, :, :, :, 3), sub(defaultpolicy, :, :, :, 3), # Outputs
+		# updatevaluepaydrm!( view(newvaluepay, :, :, :, 3), view(newbondprice, :, :, 3), 
+		# 		view(debtpolicy, :, :, :, 3), view(reservespolicy, :, :, :, 3), view(defaultpolicy, :, :, :, 3), # Outputs
 		# 		expectedvaluepay[ :, :, 3, 1], model.cashinhandpay[ :, :, 3], model.bondprice[:,:,3,1],
 		# 		newvaluedefault[ :, 3], model.policies.reservesindefault[:, 3], 1, model.econparams, model.compuparams, model.grids, true )		
 		# pmap requires shared arrays for inplace! outputs
-		pmap(updatevaluepaydrm!, [ sub(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [sub(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
-			[sub(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [sub(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
-			[sub(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
+		pmap(updatevaluepaydrm!, [ view(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [view(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
+			[view(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [view(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
+			[view(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
 			[expectedvaluepay[ :, :, iyr] for iyr=1:exonum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum],
 			[model.bondprice[ :, :, iyr] for iyr=1:exonum], [newvaluedefault[ :, iyr] for iyr=1:exonum], 
 			[model.policies.reservesindefault[:, iyr] for iyr=1:exonum], [cld(iyr, ynum) for iyr=1:exonum], 
@@ -107,22 +107,22 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 							tempdry)
 		setindex!(newbondprice, tempdryw, :)
 		# 5. Find gaps and update 
-		axpy!(-1.0, newvaluepay, model.valuepay)
-		maxabs!(sub(reservesmaxtemp,1:1), model.valuepay)
+		Base.LinAlg.BLAS.axpy!(-1.0, newvaluepay, model.valuepay)
+		maxabs!(view(reservesmaxtemp,1:1), model.valuepay)
 		valuegap=reservesmaxtemp[1]/(1-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
 		setindex!(model.valuepay, newvaluepay, :)
 		# Cannot do the same, old price cannot overwritten because of updatespeed. Recall tempdryw also holds newbondprice
-		axpy!(-1.0, model.bondprice, tempdryw )
-		maxabs!(sub(reservesmaxtemp,1:1), tempdryw)
+		Base.LinAlg.BLAS.axpy!(-1.0, model.bondprice, tempdryw )
+		maxabs!(view(reservesmaxtemp,1:1), tempdryw)
 		pricegap=reservesmaxtemp[1]
 		# Update Control
 		scal!(debtnum*resnum*ynum*regimenum, 1-updatespeed, model.bondprice, 1 )
-		axpy!(updatespeed, newbondprice, model.bondprice )
+		Base.LinAlg.BLAS.axpy!(updatespeed, newbondprice, model.bondprice )
 		# update policies
 	    if policiesout
 			setindex!(model.policies.debt, debtpolicy, :)
 			setindex!(model.policies.reserves, reservespolicy, :)
-			setindex!(model.policies.default, defaultpolicy, :)
+			setindex!(model.policies.default, BitArray(defaultpolicy), :)
 		end		
     	# 5.1 Print intermediate output
     	if printbool && mod1(resiternum,iterprint)==iterprint
@@ -165,7 +165,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams)
 	return (resiternum,valuegap,pricegap,defaultgap)
 end # Function End
 
-solvereservesmodel!(model::ReservesModel)=solvereservesmodel!(model, SolverParams( ))
+#solvereservesmodel!(model::ReservesModel)=solvereservesmodel!(model, SolverParams( ))
 #solvereservesmodel!(model::ReservesModel, x::Any)=solvereservesmodel!(model, SolverParams(x...))
 
 
