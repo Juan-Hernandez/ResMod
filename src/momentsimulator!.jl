@@ -1,4 +1,4 @@
-function parallelmomentsimulator!(compuparams::ComputationParams, econparams::EconParams, solverparams::SolverParams, outfilename::AbstractString)
+function momentsimulator!(compuparams::ComputationParams, econparams::EconParams, solverparams::SolverParams, outfilename::AbstractString)
 	
 	innermodel=ReservesModel(compuparams,econparams)
 	modelinitialize!(innermodel)
