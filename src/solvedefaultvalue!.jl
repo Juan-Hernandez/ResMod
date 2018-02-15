@@ -45,7 +45,7 @@ function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float6
         Base.LinAlg.BLAS.axpy!(-1.0, newvaluedefault, model.valuedefault)
         # Slow update speed for default not necesary. Not depending on price but on Value
         # when repaying, wich is updated slowly.
-        maxabs!(view(reservesmaxtemp, 1), model.valuedefault)
+        minimum!(view(reservesmaxtemp, 1), abs.(model.valuedefault))
         defaultgap=reservesmaxtemp[1]        
         setindex!(model.valuedefault, newvaluedefault, :)                
     # end

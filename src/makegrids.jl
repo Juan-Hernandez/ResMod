@@ -7,11 +7,11 @@ function makegrids(computationparameters::ComputationParams,econparams::EconPara
 	# Output Grid using Rouwenhorst
 
 	(lygrid::Array{Float64,1},ytrans::Array{Float64,2}) = rouwenhorst(computationparameters.ynum,0,yrho,yerrsigma);
-	y::Array{Float64,1}=exp(lygrid)
+	y::Array{Float64,1}=exp.(lygrid)
 	# ergodic dist of y
 	yergodic::Array{Float64,1}=limitdist(ytrans)
 	# Output grid when default
-	ydefault::Array{Float64,1}=min(y,y.*(1-econparams.defcost1-econparams.defcost2*y))
+	ydefault::Array{Float64,1}=min.(y,y.*(1-econparams.defcost1-econparams.defcost2*y))
 	#Make sure YdefGrid is nondecreasing:
 	for i=2:computationparameters.ynum
 		ydefault[i]=maximum(ydefault[(i-1):i])
@@ -22,18 +22,18 @@ function makegrids(computationparameters::ComputationParams,econparams::EconPara
 	mextremes::Array{Float64,1}=linspace(-computationparameters.msdwidth*computationparameters.msigma,
 											computationparameters.msdwidth*computationparameters.msigma,
 											computationparameters.mnum+1)
-	mmidpoints::Array{Float64,1}=midpoints(mextremes)
+	mmidpoints::Array{Float64,1}= [0.5 * (mextremes[i] + mextremes[i + 1]) for i = 1:length(mextremes) - 1] 
 	# Mass at each interval
 
 	# Use erf function \Phi(z)=0.5+0.5*erf(z/sqrt(2))
 
 	####
-	mmass::Array{Float64,1}=diff(0.5+0.5*erf(mextremes/(sqrt(2)*computationparameters.msigma)))
+	mmass::Array{Float64,1}=diff(0.5+0.5*erf.(mextremes/(sqrt(2)*computationparameters.msigma)))
 	mmass=mmass/sum(mmass)
 
 	# Debt Grid (vector): My debt is positive
 	debt::Array{Float64,1}=linspace(computationparameters.debtmin, computationparameters.debtmax, computationparameters.debtnum)
-	debtmaxss=Array(Int64, computationparameters.debtnum)
+	debtmaxss=Array{Int64}(computationparameters.debtnum)
 	for idebt=1:computationparameters.debtnum
 		debtmaxss[idebt]=findlast( x->(x<=(1-econparams.llambda)*debt[idebt]), debt )
 	end

@@ -17,13 +17,13 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	exonum::Int64=regimenum*ynum
 
 	# Holder for new value functions
-	newbondprice=SharedArray(Float64, debtnum, resnum, ynum, regimenum)
+	newbondprice=SharedArray{Float64}(debtnum, resnum, ynum, regimenum)
 	newvaluedefault=Array{Float64}(resnum, ynum, regimenum)
-	newvaluepay=SharedArray(Float64, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
+	newvaluepay=SharedArray{Float64}(debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
 	# Also need to allocate policies in shared arrays
-	debtpolicy=SharedArray(Int64, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
-	reservespolicy=SharedArray(Int64, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
-	defaultpolicy=SharedArray(Bool, debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
+	debtpolicy=SharedArray{Int64}(debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
+	reservespolicy=SharedArray{Int64}(debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
+	defaultpolicy=SharedArray{Bool}(debtnum, resnum, model.compuparams.mnum, ynum, regimenum)
 
 	# initial values for error
 	valuegap::Float64=10.0*solverparams.valtol
@@ -93,14 +93,19 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		# 		expectedvaluepay[ :, :, 3, 1], model.cashinhandpay[ :, :, 3], model.bondprice[:,:,3,1],
 		# 		newvaluedefault[ :, 3], model.policies.reservesindefault[:, 3], 1, model.econparams, model.compuparams, model.grids, true )		
 		# pmap requires shared arrays for inplace! outputs
-		pmap(updatevaluepaydrm!, [ view(newvaluepay, :, :, :, iyr) for iyr=1:exonum], [view(newbondprice, :, :, iyr) for iyr=1:exonum], # Outputs
-			[view(debtpolicy, :, :, :, iyr) for iyr=1:exonum], [view(reservespolicy, :, :, :, iyr) for iyr=1:exonum], # Outputs
-			[view(defaultpolicy, :, :, :, iyr) for iyr=1:exonum],  # Outputs
-			[expectedvaluepay[ :, :, iyr] for iyr=1:exonum], [model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum],
-			[model.bondprice[ :, :, iyr] for iyr=1:exonum], [newvaluedefault[ :, iyr] for iyr=1:exonum], 
-			[model.policies.reservesindefault[:, iyr] for iyr=1:exonum], [cld(iyr, ynum) for iyr=1:exonum], 
-			repeated( solverparams.valtol, exonum), repeated( model.econparams, exonum), repeated( model.compuparams, exonum), 
-			repeated( model.grids, exonum), repeated(policiesout, exonum) )
+		pmap(updatevaluepaydrm!, [ view(newvaluepay, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: new value of paying
+			[view(newbondprice, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: new bond price
+			[view(debtpolicy, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: new debt choice
+			[view(reservespolicy, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: reseves choice
+			[view(defaultpolicy, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum],  # Output: new default choice 
+			[expectedvaluepay[ :, :, iy, ir] for iy=1:ynum, ir=1:regimenum], # Input: current continuation value of paying 
+			[model.cashinhandpay[ :, :, mod1(iyr,ynum)] for iyr=1:exonum], # Input: cash in hand after servicing debt
+			[model.bondprice[ :, :, iy, ir] for iy=1:ynum, ir=1:regimenum], # Input: current bond price
+			[newvaluedefault[ :, iy, ir] for iy=1:ynum, ir=1:regimenum], # Input: value of default from 2.
+			[model.policies.reservesindefault[:, iy, ir] for iy=1:ynum, ir=1:regimenum], # Input: reserves choice in default from 2.
+			[cld(iyr, ynum) for iyr=1:exonum], # Input: regimenum
+			Iterators.repeated( solverparams.valtol, exonum), Iterators.repeated( model.econparams, exonum), Iterators.repeated( model.compuparams, exonum), 
+			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) )
 		# 4. Find new price: take expectation over regime and output
 		ywexpectation!(tempdryw, newbondprice, 
 							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),
@@ -108,12 +113,12 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		setindex!(newbondprice, tempdryw, :)
 		# 5. Find gaps and update 
 		Base.LinAlg.BLAS.axpy!(-1.0, newvaluepay, model.valuepay)
-		maxabs!(view(reservesmaxtemp,1:1), model.valuepay)
+		maximum!(view(reservesmaxtemp,1:1), abs.(model.valuepay))
 		valuegap=reservesmaxtemp[1]/(1-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
 		setindex!(model.valuepay, newvaluepay, :)
 		# Cannot do the same, old price cannot overwritten because of updatespeed. Recall tempdryw also holds newbondprice
 		Base.LinAlg.BLAS.axpy!(-1.0, model.bondprice, tempdryw )
-		maxabs!(view(reservesmaxtemp,1:1), tempdryw)
+		maximum!(view(reservesmaxtemp,1:1), abs.(tempdryw))
 		pricegap=reservesmaxtemp[1]
 		# Update Control
 		scal!(debtnum*resnum*ynum*regimenum, 1-updatespeed, model.bondprice, 1 )

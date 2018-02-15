@@ -1,14 +1,13 @@
 module ReservesTypes
 
 using Base.LinAlg.BLAS
-
+using SpecialFunctions
 
 export ComputationParams, EconParams, SolverParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
 export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
 export updatevaluepaydrm!, GGQthresholds!, defaultthresholds!
 export suddenstopthresholds!, integratethresholds!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!
-export solvereservesmodelserial!
 
 immutable ComputationParams
 	# Output grid lenght
