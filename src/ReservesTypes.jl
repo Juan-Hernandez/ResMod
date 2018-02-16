@@ -39,6 +39,8 @@ immutable EconParams
 	# Total Output correlation and variance
 	logoutputrho::Float64
 	logoutputsigma::Float64
+	# Govt spending
+	govtspend::Float64
 	# Default output cost parameters
 	defcost1::Float64
 	defcost2::Float64

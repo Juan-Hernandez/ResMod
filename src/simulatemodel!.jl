@@ -44,7 +44,7 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel, fixsee
 		end
 		# if not reentry or default in current period, still in default state
 		if simulated.defaultstate[idper] 
-			simulated.output[idper]=model.grids.ydefault[simulated.yind[idper]] # mshock to zero
+			simulated.output[idper]=model.grids.ydefault[simulated.yind[idper]]+model.econparams.govtspend # mshock to zero
 			simulated.debtind[idper+1]=1 # Zero debt in default
 			simulated.reservesind[idper+1]=model.policies.reservesindefault[ simulated.reservesind[idper], simulated.yind[idper], simulated.regime[idper] ]
 			simulated.bondprice[idper]=0
@@ -52,7 +52,7 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel, fixsee
 			simulated.bondspread[idper]=Inf
 		else 
 			# below, the country has acces to markets
-			simulated.output[idper]=model.grids.y[simulated.yind[idper]]+model.grids.mmidpoints[simulated.mind[idper]]		
+			simulated.output[idper]=model.grids.y[simulated.yind[idper]]+model.grids.mmidpoints[simulated.mind[idper]]+model.econparams.govtspend		
 			simulated.debtind[idper+1]=model.policies.debt[longstateindex]
 			simulated.reservesind[idper+1]=model.policies.reserves[longstateindex]
 			simulated.defaultstate[idper+1]=false 

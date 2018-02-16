@@ -16,7 +16,9 @@ function makegrids(computationparameters::ComputationParams,econparams::EconPara
 	for i=2:computationparameters.ynum
 		ydefault[i]=maximum(ydefault[(i-1):i])
 	end
-	
+	y=y-econparams.govtspend
+	ydefault=ydefault-econparams.govtspend
+
 	# Temporary shock grid for integration:
 	# Define intervals and use midpoints
 	mextremes::Array{Float64,1}=linspace(-computationparameters.msdwidth*computationparameters.msigma,

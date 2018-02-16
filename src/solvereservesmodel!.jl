@@ -71,8 +71,8 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		# Intermediate print and timing
 		printbool && ( (mod1(resiternum,iterprint)==1) && tic() )
 		# Policies out in last iteration
-		(max(valuegap, pricegap, defaultgap)>=solverparams.valtol) && (policiesout=true)
-		(resiternum==itermax-1) && (policiesout=true)
+		(max(valuegap, pricegap, defaultgap)<=solverparams.valtol) && (policiesout=true)
+		(resiternum==itermax) && (policiesout=true)
 
 		# 1. Expectation on exogenous varaibles
 		mexpectation!(tempdryw, model.valuepay, model.grids.mmass)
