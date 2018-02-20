@@ -13,8 +13,10 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 
 	consstar::Float64=0.0
 	thresnum::Int64=0
-	# first one outside
+	# Begin at highest m
 	mstar::Float64=mextremes[end]	
+
+	# First one outside: find optimal choice at highest m
 	for ires=1:resnum
 		for idebt=1:debtnum
 			@inbounds cons2=consexm[idebt, ires]
@@ -29,6 +31,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 					@inbounds threspolicy[1,1]=idebt
 					@inbounds threspolicy[1,2]=ires
 				end
+				# Reuse loop to set values at LOWEST m (needed for second round)
 				if cons2+mextremes[1]>1e-12
 					@inbounds setindex!(valuesatm, (cons2+mextremes[1])^(1-ggamma)*(1-bbeta)/(1-ggamma)+exp2, idebt, ires)
 				else
@@ -38,29 +41,35 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 		end
 	end	
 	
+	# If all consumptions at LOWEST m are negative return just first threshold
+	maximum(valuesatm)==-Inf && (return 1)	# Could comment but faster if out quickly	
+
 	while mstar>mextremes[1]+1e-10
 		# Set threshold and number (policies set before but not counted if thresnum not increased)
 		thresnum=thresnum+1
 		@inbounds setindex!(thresholds, mstar, thresnum)
 		# Set values to find the next mstar 
-
 		@inbounds cons1=getindex(consexm, threspolicy[thresnum, 1], threspolicy[thresnum, 2] )
 		@inbounds val1=getindex(valuesatm, threspolicy[thresnum, 1], threspolicy[thresnum, 2] )
 		@inbounds exp1=getindex(expvalue, threspolicy[thresnum, 1] , threspolicy[thresnum, 2] )
 		
 		consstar=0
 		mstar=mextremes[1]
+		# Check all choices that beat the current choice at LOWEST m.
+		# Since current is optimal at current threshold, there should be a lower threshold among current and candidate choice.
+		# Also new candidate should have more consumption and less continuation value.
 		for ires=1:resnum
 			for idebt=1:debtnum
 				@inbounds cons2=consexm[idebt, ires]
 				@inbounds val2=valuesatm[idebt, ires]
 				@inbounds exp2=expvalue[idebt, ires]
-				if val2>=val1+1e-14 && exp2<exp1-1e-14 # Here consumption can only increase
+				if val2>val1+1e-14 && exp2<exp1-1e-14 # Here it is important to have strict inequality for the -Inf cases
 					#############
 					# This line has to change to a Brent's solver for gamma not equal to 2
-					mnew=-0.5*(cons1+cons2)+0.5*((cons2-cons1)^2+4*(cons2-cons1)/(exp1-exp2)*(1-bbeta))^0.5;			
+					mnew=-0.5*(cons1+cons2)+0.5*((cons2-cons1)^2+4*(cons2-cons1)/(exp1-exp2)*(1-bbeta))^0.5			
 					#############
 					if mstar<mnew+1e-9 || (abs(mstar-mnew)<2e-9 && cons2>consstar+1e-14)
+						# Keep the highest mnew
 						mstar=mnew
 						consstar=cons2 
 						@inbounds threspolicy[thresnum+1, 1]=idebt

@@ -54,18 +54,27 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 			broadcast!(*, consexm, bondprice, grids.debt-(1-econparams.llambda)*grids.debt[idebt] )
 			# Consumption excluding M given future reserves, future debt.
 			broadcast!(+, consexm, cashinhandpay[idebt,ires], -grids.reserves'/(1+econparams.rfree), consexm)
-			
-			# 3.1-2 GGQ algorithm.
-			thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
-							consexm, expvalue, grids.mextremes,		# Array inputs
-							econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum,	# Scalar inputs
-                            valuesatm)			# Temporary Array inputs 
-			# Here thresholds were merged for all future reserves.
-			# 3.3 Enhance threshold with default decision
-			(thresnum, smallestMnodefdebt)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
-								expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, valtol,
-								compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes[1],
-								interimnewthresholds, interimthrespolicy)
+			# 3.0  	# Check for positive consumption options, if not, default is sure and return only one threhold
+		    if maximum(consexm)+grids.mextremes[end]<1e-13 # default is sure
+        		thresnum=1
+        		threspolicy[1,1]=1 								# Default debt
+        		threspolicy[1,2]=defaultreservesoptim[ires] 	# Minimum reserves (will be changed to default reserves in defaulthresholds!.jl)
+        		thresholds[1]=grids.mextremes[end] 				# Threshold is the biggest     
+        		thresdefault[1]=true							# Always default
+        		smallestMnodefdebt=0							# Default for all m-shocks
+    		else
+				# 3.1-2 GGQ algorithm.
+				thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
+								consexm, expvalue, grids.mextremes,		# Array inputs
+								econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum,	# Scalar inputs
+	                            valuesatm)			# Temporary Array inputs 
+				# Here thresholds were merged for all future reserves.
+				# 3.3 Enhance threshold with default decision
+				(thresnum, smallestMnodefdebt)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
+									expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, valtol,
+									compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes[1],
+									interimnewthresholds, interimthrespolicy)
+			end	
 			# 3.4 Check Sudden Stop impact
 			relevantss=false
 			if regime==2

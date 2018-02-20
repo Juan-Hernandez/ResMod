@@ -35,7 +35,7 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	            massgrid[1:(idmtop-2)]+=1
 	        end
 	    else # No default fill with care
-	        currentprice=llambda+(1-llambda)*coupon+(1-llambda)*bondprice[ threspolicy[idthres, 1], threspolicy[idthres, 2] ]
+	        currentprice=llambda+coupon+(1-llambda)*bondprice[ threspolicy[idthres, 1], threspolicy[idthres, 2] ]
 	        # Recall price is an expectation over exogenous variables (and actions contingent in both exo and endo states)
 	        # of (1-default)*(bond.service + remaining.bondprice). We begun with price on current exo states and future endogenous,
 	        # seek to obtain price on yesterday exogenous and current endogenous, which requires current default and future 

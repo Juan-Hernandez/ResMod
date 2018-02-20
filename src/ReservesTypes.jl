@@ -2,6 +2,7 @@ module ReservesTypes
 
 using Base.LinAlg.BLAS
 using SpecialFunctions
+using JLD #Needed for solvereservesmodel! to be able to save intermediae iterations
 
 export ComputationParams, EconParams, SolverParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
 export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
@@ -101,7 +102,7 @@ immutable ReservesModel
 		valuedefault=Array{Float64}(compuparams.resnum, compuparams.ynum, 2)
 		bondprice=Array{Float64}(compuparams.debtnum, compuparams.resnum, compuparams.ynum, 2)
 		policies=ModelPolicies(compuparams)
-		cashinhandpay=broadcast( +, -(econparams.llambda+(1-econparams.llambda)*econparams.coupon)*grids.debt, 
+		cashinhandpay=broadcast( +, -(econparams.llambda+econparams.coupon)*grids.debt, 
 								reshape( grids.reserves, 1, compuparams.resnum),
 								reshape( grids.y, 1, 1, compuparams.ynum) )
 		new(compuparams, econparams, grids, valuepay, valuedefault, bondprice, policies, cashinhandpay)

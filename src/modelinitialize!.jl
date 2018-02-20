@@ -8,7 +8,7 @@ function modelinitialize!(model::ReservesModel)
 	linearity. It is not the same a high "a" but a low "y" than a low "a" but a
 	high "y" because of persistance. """
 	# To initialize price at risk free
-	fill!(model.bondprice,(llambda+coupon*(1-llambda))/(rfree+llambda))
+	fill!(model.bondprice,(llambda+coupon)/(rfree+llambda))
 	""" Initialize Value if default which depends only on Reserves, output and regime. 
 	Assume constant consumption equivalent. This will be average of 
 	current income and average default incoms plus return on reserves """
@@ -20,8 +20,8 @@ function modelinitialize!(model::ReservesModel)
 	#	ValDefReg=ValDefReg.^(1-ggamma)./((1-ggamma)*(1-bbeta)); # Not Normalized
 	model.valuedefault[:]=model.valuedefault[:].^(1-model.econparams.ggamma)./(1-model.econparams.ggamma) # Normalized Utility		
 	""" Initialize value if not default which depends also on debt and Mshock.
-	for debt we assume a consumption equivalent cost of rfree+0.05 (like an average spread) """
-	broadcast!( +, model.valuepay, -model.grids.debt*(rfree+0.05), model.grids.reserves'*rfree,
+	for debt we assume a consumption equivalent cost of coupon: rfree+mean(spread)=coupon """
+	broadcast!( +, model.valuepay, -model.grids.debt*coupon, model.grids.reserves'*rfree,
     			reshape( model.grids.mmidpoints, 1, 1, model.compuparams.mnum ),
 				reshape( rfree/(1+rfree-yrho).*model.grids.y, 1, 1, 1, model.compuparams.ynum )
 				+(1-yrho)/(1+rfree-yrho)*Base.dot(model.grids.yergodic,model.grids.y),
