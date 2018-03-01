@@ -55,7 +55,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 
     # Main loop
     tic()
-	while resiternum<itermax && ( max(valuegap, pricegap, defaultgap)>=solverparams.valtol || !policiesout )
+	while resiternum<itermax && (max(valuegap, pricegap, defaultgap)>=solverparams.valtol || !policiesout)
 		# 0. Output and update controls
 		# Increase iteration counter
 		resiternum+=1
@@ -121,7 +121,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		maximum!(view(reservesmaxtemp,1:1), abs.(tempdryw))
 		pricegap=reservesmaxtemp[1]
 		# Update Control
-		scal!(debtnum*resnum*ynum*regimenum, 1-updatespeed, model.bondprice, 1 )
+		scal!(debtnum*resnum*ynum*regimenum, 1.0-updatespeed, model.bondprice, 1 )
 		Base.LinAlg.BLAS.axpy!(updatespeed, newbondprice, model.bondprice )
 		# update policies
 	    if policiesout
@@ -134,7 +134,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	    	print("       ")
 		    showcompact(valuegap)
 	    	print("        |       ")
-	    	showcompact(100*pricegap) 
+	    	showcompact(100.0*pricegap) 
 	    	print("       |     ")
 	    	showcompact(resiternum)
 	    	print("    | ")
@@ -147,7 +147,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 			jldopen("debugmodels.jld", "w") do file
 				write(file, "basemodel", model)
 				write(file, "valuegap", valuegap)
-				write(file, "pricegap", 100*pricegap)  
+				write(file, "pricegap", 100.0*pricegap)  
 				write(file, "iternum", resiternum)
 			end
 		end
@@ -160,7 +160,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
     	print("       ")
 	    showcompact(valuegap)
     	print("        |       ")
-    	showcompact(100*pricegap) 
+    	showcompact(100.0*pricegap) 
     	print("       |     ")
     	showcompact(resiternum)
     	print("    |   ")

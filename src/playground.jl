@@ -1,5 +1,5 @@
-module playground
-	export basemodel
+# module playground #script
+#	export basemodel
 	#currdir=pwd()
 	#cd("..")
 	#push!(LOAD_PATH,pwd())
@@ -19,18 +19,18 @@ module playground
 		1.0, 	# resmax::Float64
 		41,		# resnum::Int64
 		# Temporary (smoothing shock parameters)
-		0.0075, 	# msigma::Float64
-		2.0,	# msdwidth::Float64u
+		0.006, 	# msigma::Float64
+		2.5,	# msdwidth::Float64u
 		13,		# mnum::Int64
 		-100.0,	# thrmin::Float64
 		)
 	# Original params
 	bbeta=0.9895
-	ggamma=2 				# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
-	growth=0.0065 			# Avg quarterly growth
+	ggamma=2 			# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
+	growth=0.0065 		# Avg quarterly growth
 	rfree=0.01 			# 4% yearly
-	llambda=1.0 #0.05 			# 20 quarter year maturity
-	coupon=0.01575*0.95 	# rfree + 230 b.p annualized spread (product 0.95 for convergence)
+	llambda=0.05 		# 20 quarter year maturity
+	coupon=0.01575  	# rfree + 230 b.p annualized spread 
 		baseeconparams=EconParams(
 			# Consumer
 			bbeta*(1.0+growth)^(1-ggamma),			# bbeta::Float64
@@ -64,16 +64,12 @@ module playground
 	
 	modelinitialize!(basemodel)
 
-	jldopen(filename,"w") do file
-		write(file, "basemodel", basemodel)
-	end	
-
 	basesolverparams=SolverParams(
-		0.25, 	# updatespeed::Float64 
+		0.05, 	# updatespeed::Float64 		# 0.25 generates some convergence problems.
 		0, 		# startiternum::Int64
 		20,		# interprint::Int64 
-		800,	# itermax::Int64
-		2000, 	# intermediatesave::Int64
+		801,	# itermax::Int64
+		800, 	# intermediatesave::Int64
 		false,	# policiesout::Bool
 		1e-5, 	# valtol::Float64 
 		)
@@ -96,32 +92,33 @@ module playground
 	# 3.3 Print Moments
 	println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	| sprXgrowth |   maxgap   |")
 	println("----------------------------------------------------------------------------------------------------------------------")
-		showcompact(basemoments.debtmean)
-		print("  | ")
-		showcompact(basemoments.reservesmean)
-		print("  | ")
-		showcompact(basemoments.spreadmean)
-		print(" | ")
-		showcompact(basemoments.spreadsigma)
-		print(" | ")
-		showcompact(basemoments.defaultstatemean)
-		print("  | ")
-		showcompact(basemoments.defaultchoicemean)
-		print("  | ")
-		showcompact(basemoments.spreadXgdp)
-		print("  | ")
-		showcompact(basemoments.spreadXgrowth)
-		print("  | ")
-		showcompact(basemoments.deltaspreadXgdp)
-		print("  | ")
-		showcompact(basemoments.deltaspreadXgrowth)
-		print("  | ")
-		showcompact(maximum([valuegap,pricegap,defaultgap]) )
-		println("  |")
+	showcompact(basemoments.debtmean)
+	print("  | ")
+	showcompact(basemoments.reservesmean)
+	print("  | ")
+	showcompact(basemoments.spreadmean)
+	print(" | ")
+	showcompact(basemoments.spreadsigma)
+	print(" | ")
+	showcompact(basemoments.defaultstatemean)
+	print("  | ")
+	showcompact(basemoments.defaultchoicemean)
+	print("  | ")
+	showcompact(basemoments.spreadXgdp)
+	print("  | ")
+	showcompact(basemoments.spreadXgrowth)
+	print("  | ")
+	showcompact(basemoments.deltaspreadXgdp)
+	print("  | ")
+	showcompact(basemoments.deltaspreadXgrowth)
+	print("  | ")
+	showcompact(maximum([valuegap,pricegap,defaultgap]) )
+	println("  |")
 	println("======================================================================================================================")
 	# 3.4. Save solved
 	jldopen(filename,"r+") do file
 		write(file, "basemoments", basemoments)
-	end		
-end
+	end	
+	flag=errr	
+# end
 
