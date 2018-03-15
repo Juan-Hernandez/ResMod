@@ -34,6 +34,8 @@ immutable EconParams
 	ggamma::Int64  # HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 	# Risk free rate
 	rfree::Float64 
+	ggammalender::Float64
+	wealthmean::Float64
 	# Bond Maturity and coupon
 	llambda::Float64 # inverse of quarterly avg maturity
 	coupon::Float64 
@@ -78,11 +80,13 @@ immutable ModelPolicies
 	debt::Array{Int64,5}
 	reserves::Array{Int64,5}
 	default::BitArray{5}
+	# lenderchoice::Array{Float64,5}		# This is weird, mu = q*b'/W, is a float and not a policy. Required every iteration.
 	function ModelPolicies(compuparams::ComputationParams)
 		reservesindefault=Array{Int64}(compuparams.resnum, compuparams.ynum, 2)
 		debt=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		reserves=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		default=BitArray(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
+		# lenderchoice=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		new(reservesindefault, debt, reserves, default)
 	end
 end
@@ -124,8 +128,8 @@ type SolverParams
 	policiesout::Bool
 	# Tolerances
 	valtol::Float64 
-	function SolverParams(updatespeed=0.25, startiternum=0, iterprint=25, itermax=4001,
-							intermediatesave=1000, policiesout=false, valtol=1e-05)
+	function SolverParams(updatespeed=0.25, startiternum=0, iterprint=25, itermax=1001,
+							intermediatesave=2000, policiesout=false, valtol=1e-05)
 		new(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol)
 	end
 end

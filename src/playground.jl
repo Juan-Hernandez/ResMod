@@ -20,7 +20,7 @@
 		41,		# resnum::Int64
 		# Temporary (smoothing shock parameters)
 		0.006, 	# msigma::Float64
-		2.5,	# msdwidth::Float64u
+		2.5,	# msdwidth::Float64u	# This is important for curvature on mmass. 2.0 is very flat and leads to poor convergence
 		13,		# mnum::Int64
 		-100.0,	# thrmin::Float64
 		)
@@ -33,20 +33,22 @@
 	coupon=0.01575  	# rfree + 230 b.p annualized spread 
 		baseeconparams=EconParams(
 			# Consumer
-			bbeta*(1.0+growth)^(1-ggamma),			# bbeta::Float64
-			ggamma,									# ggamma::Int64;  # HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
-			# Risk free rate
-			(rfree-growth)/(1.0+growth),		 	# rfree::Float64 # 4% yearly
+			bbeta*(1.0+growth)^(1-ggamma),				# bbeta::Float64
+			ggamma,										# ggamma::Int64;  		# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
+			# Risk free rate, lenders risk aversion and mean wealth
+			(rfree-growth)/(1.0+growth),		 		# rfree::Float64 		# 4% yearly
+			ggamma,										# ggamalender::Float64 	# Same as borrower. This could be changed to values different from 2.
+			1.5,										# wealthmean::Flotat64	# To calibrate with risk premium									
 			# Bond Maturity and coupon
-			(llambda+growth)/(1.0+growth), 		# llambda::Float64 # 5 year avg maturity (6% avg quarterly debt service)
-			coupon-growth*(1.0-llambda)/(1.0+growth), # coupon:: Float64 
-			#  ll + z = ll'+z' = (ll+g)/(1+g)+ z'
- 			# z' = z + ll - ll' = z + (ll + ll*g)/(1+g) -(ll + g)/(1+g) = z -g(1-ll)/(1+g) = z - g*(1-ll')
-			# OLD z' :  0.01575*(1+growth)-growth,
-			#  ll + (1-ll)z = ll'+(1-ll')z' = (ll+g)/(1+g)+ (1-ll)z'/(1+g)
- 			# z' = z(1+g) + ll(1+g)/(1-ll) - ll'(1+g)/(1-ll) = z(1+g) + (ll + ll*g)/(1-ll) -(ll + g)/(1-ll) = z(1+g) -g(1-ll)/(1-ll) = z(1+g) - g
- 			# TEST: since I changed to coupon in last period, setting the new z as (old z)*(1-llambda) should leave everithing equal
- 			# 0.01575*(1-0.05)-growth*(1-0.05)/(1+growth),
+			(llambda+growth)/(1.0+growth), 				# llambda::Float64 		# 5 year avg maturity (6% avg quarterly debt service)
+			coupon-growth*(1.0-llambda)/(1.0+growth), 	# coupon:: Float64 
+				#  ll + z = ll'+z' = (ll+g)/(1+g)+ z'
+	 			# z' = z + ll - ll' = z + (ll + ll*g)/(1+g) -(ll + g)/(1+g) = z -g(1-ll)/(1+g) = z - g*(1-ll')
+				# OLD z' :  0.01575*(1+growth)-growth,
+				#  ll + (1-ll)z = ll'+(1-ll')z' = (ll+g)/(1+g)+ (1-ll)z'/(1+g)
+	 			# z' = z(1+g) + ll(1+g)/(1-ll) - ll'(1+g)/(1-ll) = z(1+g) + (ll + ll*g)/(1-ll) -(ll + g)/(1-ll) = z(1+g) -g(1-ll)/(1-ll) = z(1+g) - g
+	 			# TEST: since I changed to coupon in last period, setting the new z as (old z)*(1-llambda) should leave everithing equal
+	 			# 0.01575*(1-0.05)-growth*(1-0.05)/(1+growth),
 			# Expected Output grid parameters
 			0.7584, 	# logOutputRho::Float64
 			0.0982, 	# logOutputSigma::Float64
@@ -65,7 +67,7 @@
 	modelinitialize!(basemodel)
 
 	basesolverparams=SolverParams(
-		0.05, 	# updatespeed::Float64 		# 0.25 generates some convergence problems.
+		0.2, 	# updatespeed::Float64 		# 0.25 generates some convergence problems.
 		0, 		# startiternum::Int64
 		20,		# interprint::Int64 
 		801,	# itermax::Int64
@@ -119,6 +121,5 @@
 	jldopen(filename,"r+") do file
 		write(file, "basemoments", basemoments)
 	end	
-	flag=errr	
 # end
 

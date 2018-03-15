@@ -1,4 +1,4 @@
-function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondprice::AbstractArray{Float64,2}, 
+function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashflow::AbstractArray{Float64,3}, 
 							 debtpolicy::AbstractArray{Int64,3}, reservespolicy::AbstractArray{Int64,3}, defaultpolicy::AbstractArray{Bool,3}, #Outputs
 							 expvalue::Array{Float64,2}, cashinhandpay::Array{Float64,2}, bondprice::Array{Float64,2},
 							 valuedefault::Array{Float64,1}, defaultreservesoptim::Array{Int64,1}, regime::Int64, valtol::Float64,
@@ -6,9 +6,10 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 """	This function returns updated array of value (current debt,reserves and m), policies: next debt, 
 	reserves and default (curr debt, res, m) for a fixed output and regime (output preallocation is done here),
 	taking as input expected continuation value, cash in hand if pay, current bondprice matrix (future debt and reserves)
-	default value and reserves choice, and regime. 
-	New bond price will be an intermediate step for updating bond price. Average over mshok of future price times repay prob.
-	the other exogenous expectations are done outside """
+	default value and reserves choice, and regime. New bond price will be an intermediate step for updating bond price. 
+	
+	v3. UPDATE: now mshock expectation is done outside to accomodate lender risk aversion. (Average over mshock of future price times repay prob)
+	the other exogenous expectations are still done outside """
 
 	# 3.0 Loops and preliminaries.
 	# No need to preallocate outside since function will be parallelized
@@ -37,7 +38,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 	interimnewthresholds=Array{Float64}(compuparams.debtnum*(compuparams.resnum+1) )
 	# small grid for values
 	smallvalgrid=Array{Float64}(compuparams.mnum)
-	smallpricegrid=Array{Float64}(compuparams.mnum)
+	smallcahsflowgrid=Array{Float64}(compuparams.mnum)
 	smallmassgrid=Array{Float64}(compuparams.mnum)
 	# small grid for policies
 	smallpolicygrid=Array{Int64}(compuparams.mnum, 2)
@@ -91,12 +92,13 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, newbondpr
 				end
 			end
 			# 3.5 Integration
-			integratethresholds!(smallvalgrid,	smallpricegrid, smallmassgrid,# Outputs
+			integratethresholds!(smallvalgrid,	smallcahsflowgrid, smallmassgrid,# Outputs
 									thresholds, threspolicy, thresnum, thresdefault,
 									grids.mextremes, grids.mmidpoints, bondprice, consexm, expvalue,
 									valuedefault[ires], econparams)
 			newvaluepaydrm[idebt, ires, :]=smallvalgrid
-			newbondprice[idebt, ires]=BLAS.dot(compuparams.mnum,grids.mmass,1,smallpricegrid,1)
+
+			bondcashflow[idebt, ires, :]=smallcahsflowgrid
 			# 3.6 Get policies on grid.
 			if policiesout
 				getpolicies!( smallpolicygrid, smalldefaultgrid,

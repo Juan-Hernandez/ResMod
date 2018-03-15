@@ -12,8 +12,8 @@ function mexpectation!(expected::Array{Float64,4}, # output
 	end
 	for iout=1:outersize
 		for im=1:mnum
-			@inbounds for iin=1:innersize
-				expected[(iout-1)*innersize+iin]+=mmass[im]*current[(iout-1)*mnum*innersize+(im-1)*innersize+iin]
+			for iin=1:innersize
+				@inbounds expected[(iout-1)*innersize+iin]+=mmass[im]*current[(iout-1)*mnum*innersize+(im-1)*innersize+iin]
 			end
 		end
 	end
