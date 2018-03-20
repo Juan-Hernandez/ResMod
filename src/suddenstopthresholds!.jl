@@ -22,16 +22,16 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
 
     # 1. Compare all feasible debts against default. Get smallest threshold
     for idftres=1:resnum 	# Check all pairs of reserves and debt
-		debtminfres=findfirst(x->(x>mextremes[1]), consexm[ :, idftres] )
+		debtminfres=findfirst(consexm[ :, idftres].>mextremes[1] )
 		if debtminfres!=0
 			# Only enter for relevant reserves
             for idftdebt=debtminfres:debtmaxss # Will enter only if can consume if repay in SS
                 # Compare default with idftdebt, idftres
                 vdiff=valuedefault-expvalue[idftdebt, idftres]
-                if vdiff>-1e-6*(1-bbeta)*valtol # as difference in flow utility is negative, default is sure
+                if vdiff>-1e-6*(1.0-bbeta)*valtol # as difference in flow utility is negative, default is sure
                     tempthres=-thrmin # Same as +MaxThreshold, always default
                 else # Find threshold (this can be solved for all gamma)
-                    tempthres=(vdiff*(1-ggamma)/(1-bbeta))^(1/(1-ggamma))-consexm[idftdebt, idftres]
+                    tempthres=(vdiff*(1.0-ggamma)/(1.0-bbeta))^(1.0/(1.0-ggamma))-consexm[idftdebt, idftres]
                     #% Normalized utility
                 end
                 minthres>tempthres && (minthres=tempthres)
@@ -55,7 +55,8 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
 	    						# because default without SS implies default with SS
 	    						# given that at this point continuation value of repayment is the same.
 	    # Append the other intervals, no default
-	    toappend=findfirst(x->(x>interimnewthresholds[1]), thresholds[1:thresnum])
+	    # toappend=findfirst(x->(x>interimnewthresholds[1]), thresholds[1:thresnum])
+        toappend=findfirst(thresholds[1:thresnum].>interimnewthresholds[1])
 	    if toappend!=0
 	        interimthresnum=thresnum-toappend+2
 	        interimnewthresholds[2:interimthresnum]=thresholds[toappend:thresnum]

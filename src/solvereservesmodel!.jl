@@ -6,7 +6,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	intermediatesave::Int64=solverparams.intermediatesave
 	policiesout::Bool=solverparams.policiesout
 	updatespeed::Float64=solverparams.updatespeed
-
+	solveroutvec::Array{Float64}(4)
 	printbool::Bool=iterprint!=0
 
 	# Unpack counters
@@ -18,7 +18,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	exonum::Int64=regimenum*ynum
 
 	# Holder for new value functions
-	newbondprice=Array{Float64}(debtnum,resnum, ynum, regimenum)
+	newbondprice=Array{Float64}(debtnum, resnum, ynum, regimenum)
 	bondcashflow=SharedArray{Float64}(debtnum, resnum, mnum, ynum, regimenum)
 	newvaluedefault=Array{Float64}(resnum, ynum, regimenum)
 	newvaluepay=SharedArray{Float64}(debtnum, resnum, mnum, ynum, regimenum)
@@ -40,7 +40,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	defaultflowutility=Array{Float64}(resnum,resnum,ynum)
 	broadcast!(+, defaultflowutility, -model.grids.reserves./(1.0+model.econparams.rfree), model.grids.reserves', reshape(model.grids.ydefault,1,1,ynum))
 	defaultflowutility[defaultflowutility.<0.0]=0.0
-	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1-model.econparams.ggamma).*(1-model.econparams.bbeta)
+	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1.0-model.econparams.ggamma).*(1.0-model.econparams.bbeta)
 	# Preallocation of temporary arrays
 	tempdry=Array{Float64}(debtnum,resnum,ynum)
 	tempdryw=Array{Float64}(debtnum,resnum,ynum,regimenum)
@@ -68,7 +68,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 			jldopen("debugoldmodel.jld", "w") do file
 				write(file, "oldmodel", model)
 				write(file, "valuegap", valuegap)
-				write(file, "pricegap", 100*pricegap)  
+				write(file, "pricegap", 100.0*pricegap)  
 				write(file, "iternum", resiternum-1)
 			end
 		end
@@ -188,7 +188,8 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
     	showcompact(toq())
     	println("  |")
 	end
-	return (resiternum,valuegap,pricegap,defaultgap)
+	solveroutvec = [convert(Float64, resiternum),valuegap, pricegap, defaultgap]
+	return solveroutvec
 end # Function End
 
 #solvereservesmodel!(model::ReservesModel)=solvereservesmodel!(model, SolverParams( ))

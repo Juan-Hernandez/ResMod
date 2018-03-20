@@ -110,4 +110,5 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 			end
 	 	end # Finish loop over current debt
 	end # Finish loop over current reserves
+	nothing
 end # Function end

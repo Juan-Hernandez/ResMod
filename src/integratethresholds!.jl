@@ -17,6 +17,8 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	mstar::Float64=mextremes[1] # Current point of integration, will grow until mextremes[end]
 	currentprice::Float64=0.0
 	currentvalue::Float64=0.0
+	thisthresdebt::Int64=0
+	thisthresres::Int64=0
 	# 2.3 Fill output grids with zeros
 	fill!(valmgrid, 0.0)
 	fill!(pricegrid, 0.0)
@@ -24,38 +26,40 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 
 	# 3. Loop
 	for idthres=1:thresnum # Loop over M,
-	    idmtop=findfirst( x->(x>=thresholds[idthres]) , mextremes)
-	    idmlow=findfirst( x->(x>mstar), mextremes)
+	    idmtop=findfirst(mextremes.>=thresholds[idthres])
+	    idmlow=findfirst(mextremes.>mstar)
 	    if (idthres==1) && (thresdefault[idthres]) # Default only for low M
-	        valmgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff*valuedefault
-	        mstar=thresholds[idthres]
-	        massgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff
+	        @inbounds valmgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff*valuedefault
+	        @inbounds mstar=thresholds[idthres]
+	        @inbounds massgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff
 	        if idmtop>2 # Over all intervals before, default utility
-	            valmgrid[1:(idmtop-2)]+=valuedefault
-	            massgrid[1:(idmtop-2)]+=1
+	            @inbounds valmgrid[1:(idmtop-2)]+=valuedefault
+	            @inbounds massgrid[1:(idmtop-2)]+=1
 	        end
 	    else # No default fill with care
-	        currentprice=llambda+coupon+(1-llambda)*bondprice[ threspolicy[idthres, 1], threspolicy[idthres, 2] ]
+			@inbounds thisthresdebt=threspolicy[idthres, 1]
+			@inbounds thisthresres=threspolicy[idthres, 2]	    
+	        @inbounds currentprice=llambda+coupon+(1.0-llambda)*bondprice[ thisthresdebt, thisthresres ]
 	        # Recall price is an expectation over exogenous variables (and actions contingent in both exo and endo states)
 	        # of (1-default)*(bond.service + remaining.bondprice). We begun with price on current exo states and future endogenous,
 	        # seek to obtain price on yesterday exogenous and current endogenous, which requires current default and future 
 	        # debt and reserves decisions. Variable currentprice is (bond.service+remaining.bondprice) for yesterdays exogenous and current 
 	        # endogenous states.
 	        for idj=idmlow:(idmtop-1)
-	            currentvalue=consexm[ threspolicy[idthres, 1], threspolicy[idthres, 2] ] + 0.5*max(mextremes[idj-1],mstar)+0.5*mextremes[idj] # consumption
-	            currentvalue=currentvalue^(1-ggamma)/(1-ggamma)*(1-bbeta) # flow utility
-	           	currentvalue+=expvalue[ threspolicy[idthres, 1], threspolicy[idthres, 2] ] # plus continuation value
-	            valmgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)*currentvalue
-	            pricegrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)*currentprice
-	            massgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)
+	            @inbounds currentvalue=consexm[ thisthresdebt, thisthresres ] + 0.5*max(mextremes[idj-1],mstar)+0.5*mextremes[idj] # consumption
+	            currentvalue=currentvalue^(1-ggamma)/(1.0-ggamma)*(1.0-bbeta) # flow utility
+	           	@inbounds currentvalue+=expvalue[ thisthresdebt, thisthresres ] # plus continuation value
+	            @inbounds valmgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)*currentvalue
+	            @inbounds pricegrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)*currentprice
+	            @inbounds massgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)
 	        end
-	        currentvalue=consexm[ threspolicy[idthres, 1], threspolicy[idthres, 2] ] + 0.5*(max(mextremes[idmtop-1], mstar)+thresholds[idthres])
-	        currentvalue=currentvalue^(1-ggamma)/(1-ggamma)*(1-bbeta) # flow utility
-	        currentvalue+=expvalue[ threspolicy[idthres, 1], threspolicy[idthres, 2] ]
-	        valmgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentvalue
-	        pricegrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentprice
-	        massgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff
-	        mstar=thresholds[idthres]
+	        @inbounds currentvalue=consexm[ thisthresdebt, thisthresres ] + 0.5*(max(mextremes[idmtop-1], mstar)+thresholds[idthres])
+	        currentvalue=currentvalue^(1-ggamma)/(1.0-ggamma)*(1.0-bbeta) # flow utility
+	        @inbounds currentvalue+=expvalue[ thisthresdebt, thisthresres ]
+	        @inbounds valmgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentvalue
+	        @inbounds pricegrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentprice
+	        @inbounds massgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff
+	        @inbounds mstar=thresholds[idthres]
 	    end
 	    # if maximum(pricegrid)>(Qrfree*(1+rfree)+0.01*ValTol)
 	    #     error('Integrated value for q too big')

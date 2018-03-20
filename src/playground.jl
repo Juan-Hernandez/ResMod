@@ -76,7 +76,12 @@
 		1e-5, 	# valtol::Float64 
 		)
 
-	(resiternum,valuegap,pricegap,defaultgap)=solvereservesmodel!(basemodel, basesolverparams)	
+	solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
+	resiternum = floor(Int64, solveroutvec[1])
+	valuegap = solveroutvec[2]
+	pricegap = solveroutvec[3]
+	defaultgap = solveroutvec[4]
+
 	jldopen(filename,"w") do file
 		write(file, "basemodel", basemodel)
 	end	
