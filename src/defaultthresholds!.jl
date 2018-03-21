@@ -34,8 +34,8 @@ function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int
             # defaults for bigger M's. Hence we should append the rest of the vectors
             toappend=thresnum-idthres+1
             interimnewthresholds[(interimthresnum+1):(interimthresnum+toappend)]=thresholds[idthres:thresnum]
-            interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 1]=threspolicy[idthres:thresnum, 1]
-            interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 2]=threspolicy[idthres:thresnum, 2]
+            @inbounds interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 1]=threspolicy[idthres:thresnum, 1]
+            @inbounds interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 2]=threspolicy[idthres:thresnum, 2]
             thresdefault[(interimthresnum+1):(interimthresnum+toappend)]=false # No default again
             interimthresnum+=toappend
             firstdebtnodef=threspolicy[idthres, 1]
@@ -70,7 +70,7 @@ function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int
     end
     # Now have thresholds and actions including default.
     thresnum=interimthresnum
-    thresholds[1:thresnum]=interimnewthresholds[1:interimthresnum]
-    threspolicy[1:thresnum, :]=interimthrespolicy[1:interimthresnum, :]
+    @inbounds thresholds[1:thresnum]=interimnewthresholds[1:interimthresnum]
+    @inbounds threspolicy[1:thresnum, 1:2]=interimthrespolicy[1:interimthresnum, 1:2]
     return (thresnum, firstdebtnodef)
 end # function end
