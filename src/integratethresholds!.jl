@@ -7,7 +7,7 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	coupon::Float64=econparams.coupon
 	ggamma::Int64=econparams.ggamma
 	bbeta::Float64=econparams.bbeta
-
+	mextnum::Int64=size(mextremes,1)
 	# 2. Initialize
 	# 2.1 Temporary integer varaibles
 	idmtop::Int64=2 # First interval [mextremes[1],mextremes[2]
@@ -26,8 +26,9 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 
 	# 3. Loop
 	for idthres=1:thresnum # Loop over M,
-	    idmtop=findfirst(mextremes.>=thresholds[idthres])
-	    idmlow=findfirst(mextremes.>mstar)
+	    # idmtop=findfirst(mextremes.>=thresholds[idthres]) # very expenisve
+	    idmtop=max( mextnum-floor( Int64, (mextremes[mextnum]-thresholds[idthres])/mdiff ), 1)
+	    # idmlow=findfirst(mextremes.>mstar) # Very expensive. Not needed if idthres == 1 
 	    if (idthres==1) && (thresdefault[idthres]) # Default only for low M
 	        @inbounds valmgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff*valuedefault
 	        @inbounds mstar=thresholds[idthres]
@@ -36,7 +37,8 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	            @inbounds valmgrid[1:(idmtop-2)]+=valuedefault
 	            @inbounds massgrid[1:(idmtop-2)]+=1
 	        end
-	    else # No default fill with care
+	    else # No default fill with care, 
+		    idmlow=ceil( Int64, (mstar-mextremes[1])/mdiff)+1 		# since mstar assigned once, mstar>mextremes[1] 
 			@inbounds thisthresdebt=threspolicy[idthres, 1]
 			@inbounds thisthresres=threspolicy[idthres, 2]	    
 	        @inbounds currentprice=llambda+coupon+(1.0-llambda)*bondprice[ thisthresdebt, thisthresres ]
