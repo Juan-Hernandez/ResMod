@@ -19,10 +19,12 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
     vdiff::Float64=NaN
     # 0.3 Tempo booleans
     relevantss::Bool=true   # In principle Sudden Stop will be relevant
+    tempbitvec=BitArray(size(consexm,1))
 
     # 1. Compare all feasible debts against default. Get smallest threshold
     for idftres=1:resnum 	# Check all pairs of reserves and debt
-		debtminfres=findfirst(consexm[ :, idftres].>mextremes[1] )
+		tempbitvec=consexm[ :, idftres].>mextremes[1]
+        debtminfres=findfirst(tempbitvec)   # if still slow, try comprehension inside findfirst
 		if debtminfres!=0
 			# Only enter for relevant reserves
             for idftdebt=debtminfres:debtmaxss # Will enter only if can consume if repay in SS
