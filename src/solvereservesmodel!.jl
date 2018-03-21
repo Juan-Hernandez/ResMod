@@ -6,7 +6,6 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	intermediatesave::Int64=solverparams.intermediatesave
 	policiesout::Bool=solverparams.policiesout
 	updatespeed::Float64=solverparams.updatespeed
-	solveroutvec::Array{Float64}(4)
 	printbool::Bool=iterprint!=0
 
 	# Unpack counters
@@ -31,6 +30,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	valuegap::Float64=10.0*solverparams.valtol
 	pricegap::Float64=10.0*solverparams.valtol
 	defaultgap::Float64=10.0*solverparams.valtol
+	solveroutvec=Array{Float64}(4) # This will hold gaps and iternum as solvereservesmodel! output
 	# Holder for exogenous expectation
 	expectedvaluepay=Array{Float64}(debtnum,resnum,ynum,regimenum)
 	# Preallocate intermediate stages

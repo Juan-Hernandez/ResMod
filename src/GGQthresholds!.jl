@@ -40,7 +40,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 					#############
 					# This line has to change to a Brent's solver for ggamma not equal to 2
 					@inbounds setindex!(valuesatm, (bbeta-1.0)/(cons2+mextremes[1])+exp2, idebt, ires) 
-					maxvaluesatmisneg::Bool=false
+					maxvaluesatmisneg=false
 				else
 					@inbounds setindex!(valuesatm, -Inf, idebt, ires)
 				end
