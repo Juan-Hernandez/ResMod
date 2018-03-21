@@ -3,6 +3,7 @@
 #cd("..")
 #push!(LOAD_PATH,pwd())
 #cd(currdir)
+
 # 0. Load packages and definitions
 using ReservesTypes
 using JLD
@@ -92,6 +93,7 @@ defaultgap = solveroutvec[4]
 # 4.3 Save solved model
 jldopen(filename,"w") do file
 	write(file, "basemodel", basemodel)
+	write(file, "basesolverparams", basesolverparams)
 end	
 
 # 5. Simulate and get moments
