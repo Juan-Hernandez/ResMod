@@ -17,10 +17,13 @@ function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int
     thresdefault[1:thresnum]=false # Initially no default.
     for idthres=1:thresnum # Run over current thresholds
         vdiff=valuedefault-expvalue[threspolicy[idthres, 1], threspolicy[idthres, 2]]
-        if vdiff>-1e-6*(1-bbeta)*valtol # as flow utility is negative, default is sure
+        if vdiff>-1e-6*(1.0-bbeta)*valtol # as flow utility is negative, default is sure
             tempthres=-thrmin # same as +ThrMax, always below, always default
-        else # Find threshold (this can solve for all gamma)
-            tempthres=(vdiff*(1-ggamma)/(1-bbeta))^(1/(1-ggamma))-consexm[threspolicy[idthres, 1], threspolicy[idthres, 2]]
+        else # Find threshold 
+            # (this can solve for all gamma)
+            # tempthres=(vdiff*(1-ggamma)/(1.0-bbeta))^(1.0/(1-ggamma))-consexm[threspolicy[idthres, 1], threspolicy[idthres, 2]]
+            # Here we use gamma=2
+            tempthres=(bbeta-1.0)/vdiff-consexm[threspolicy[idthres, 1], threspolicy[idthres, 2]]
             # Normalized Utility
         end
         if idthres==1

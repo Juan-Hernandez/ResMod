@@ -12,29 +12,32 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
     # 0. Allocate temporary variables
     # 0.1 Temp Integers  
     toappend::Int64=0
-    debtminfres::Int64=0
+    # debtminfres::Int64=0
     # 0.2. Temp floats
     minthres::Float64=-thrmin   # Same as +MaxThreshold, always default
     tempthres::Float64=NaN
     vdiff::Float64=NaN
     # 0.3 Tempo booleans
     relevantss::Bool=true   # In principle Sudden Stop will be relevant
-    tempbitvec=BitArray(size(consexm,1))
+    # tempbitvec=BitArray(size(consexm,1))
 
     # 1. Compare all feasible debts against default. Get smallest threshold
     for idftres=1:resnum 	# Check all pairs of reserves and debt
-		tempbitvec=consexm[ :, idftres].>mextremes[1]
-        debtminfres=findfirst(tempbitvec)   # if still slow, try comprehension inside findfirst
-		if debtminfres!=0
-			# Only enter for relevant reserves
-            for idftdebt=debtminfres:debtmaxss # Will enter only if can consume if repay in SS
+        for idftdebt=1:debtmaxss # Will enter only if can consume if repay in SS
+
+
+            
+            if consexm[ idftdebt, idftres]>mextremes[1]     # Only enter for relevant future choice
                 # Compare default with idftdebt, idftres
                 vdiff=valuedefault-expvalue[idftdebt, idftres]
                 if vdiff>-1e-6*(1.0-bbeta)*valtol # as difference in flow utility is negative, default is sure
                     tempthres=-thrmin # Same as +MaxThreshold, always default
-                else # Find threshold (this can be solved for all gamma)
-                    tempthres=(vdiff*(1.0-ggamma)/(1.0-bbeta))^(1.0/(1.0-ggamma))-consexm[idftdebt, idftres]
-                    #% Normalized utility
+                else # Find threshold 
+                    # (this can be solved for all gamma)
+                    # tempthres=(vdiff*(1-ggamma)/(1.0-bbeta))^(1.0/(1-ggamma))-consexm[idftdebt, idftres]
+                    # Here we use gamma = 2
+                    tempthres=(bbeta-1.0)/vdiff-consexm[idftdebt, idftres]
+                    # Normalized utility
                 end
                 minthres>tempthres && (minthres=tempthres)
             end

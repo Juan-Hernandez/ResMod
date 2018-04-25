@@ -49,14 +49,18 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	        # endogenous states.
 	        for idj=idmlow:(idmtop-1)
 	            @inbounds currentvalue=consexm[ thisthresdebt, thisthresres ] + 0.5*max(mextremes[idj-1],mstar)+0.5*mextremes[idj] # consumption
-	            currentvalue=currentvalue^(1-ggamma)/(1.0-ggamma)*(1.0-bbeta) # flow utility
+	            # currentvalue=currentvalue^(1-ggamma)/(1.0-ggamma)*(1.0-bbeta) # flow utility
+	            # using gamma = 2
+	            currentvalue=(bbeta-1.0)/currentvalue # flow utility
 	           	@inbounds currentvalue+=expvalue[ thisthresdebt, thisthresres ] # plus continuation value
 	            @inbounds valmgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)*currentvalue
 	            @inbounds pricegrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)*currentprice
 	            @inbounds massgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1)
 	        end
 	        @inbounds currentvalue=consexm[ thisthresdebt, thisthresres ] + 0.5*(max(mextremes[idmtop-1], mstar)+thresholds[idthres])
-	        currentvalue=currentvalue^(1-ggamma)/(1.0-ggamma)*(1.0-bbeta) # flow utility
+			# currentvalue=currentvalue^(1-ggamma)/(1-ggamma)*(1.0-bbeta) # flow utility
+	        # using gamma = 2
+            currentvalue=(bbeta-1.0)/currentvalue # flow utility
 	        @inbounds currentvalue+=expvalue[ thisthresdebt, thisthresres ]
 	        @inbounds valmgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentvalue
 	        @inbounds pricegrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentprice

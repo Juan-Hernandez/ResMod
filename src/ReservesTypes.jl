@@ -4,10 +4,12 @@ using Base.LinAlg.BLAS
 using SpecialFunctions
 using JLD #Needed for solvereservesmodel! to be able to save intermediae iterations
 
-export ComputationParams, EconParams, SolverParams, ModelGrids, ReservesModel, ModelSimulation, ModelMoments
-export modelinitialize!, mexpectation!, ywexpectation!, solvedefaultvalue!, solvereservesmodel!
-export updatevaluepaydrm!, GGQthresholds!, defaultthresholds!
-export suddenstopthresholds!, integratethresholds!, getpolicies!
+export ComputationParams, EconParams, SolverParams, ModelGrids 
+export ReservesModel, ModelSimulation, ModelMoments
+export modelinitialize!, mexpectation!, ywexpectation!, mywreduce!
+export solvedefaultvalue!, solvereservesmodel!, updatevaluepaydrm!
+export GGQthresholds!, defaultthresholds!, suddenstopthresholds!, integratethresholds!
+export findnewprice!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!
 
 immutable ComputationParams
@@ -203,7 +205,8 @@ include("GGQthresholds!.jl")
 include("defaultthresholds!.jl")
 include("suddenstopthresholds!.jl")
 include("integratethresholds!.jl")
-include("priceexpectation!.jl")
+include("mywreduce!.jl")
+include("findnewprice!.jl")
 include("getpolicies!.jl")
 
 # Simulation 

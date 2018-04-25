@@ -8,7 +8,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 	val1::Float64=-Inf
 	val2::Float64=-Inf
 	exp1::Float64=-Inf
-	exp2::Float64=0.0
+	expect2::Float64=0.0 # Do not overload exp2, this is a function in Base
 
 	consdiff::Float64=0.0
 	expdiff::Float64=0.0
@@ -23,27 +23,27 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 	for ires=1:resnum
 		for idebt=1:debtnum
 			@inbounds cons2=consexm[idebt, ires]
-			@inbounds exp2=expvalue[idebt, ires]
+			@inbounds expect2=expvalue[idebt, ires]
 			if cons2+mstar<1e-12
 				@inbounds setindex!(valuesatm, -Inf, idebt,ires)
 			else
 				# This depends on gamma==2
 				consdiff=cons2-cons1
-				expdiff=exp2-exp1
+				expdiff=expect2-exp1
 				if (abs(expdiff)<1.1e-14 && consdiff>0.0) || (consdiff>-expdiff*(cons1+mstar)*(cons2+mstar)/(1.0-bbeta)) 
 					cons1=cons2
-					exp1=exp2
+					exp1=expect2
 					@inbounds threspolicy[1,1]=idebt
 					@inbounds threspolicy[1,2]=ires
 				end
 				# Reuse loop to set values at LOWEST m (needed for second round)
 				if cons2+mextremes[1]>1e-12
 					# Next line is very expensive:
-					# @inbounds setindex!(valuesatm, (cons2+mextremes[1])^(1-ggamma)*(1.0-bbeta)/(1.0-ggamma)+exp2, idebt, ires) 
+					# @inbounds setindex!(valuesatm, (cons2+mextremes[1])^(1-ggamma)*(1.0-bbeta)/(1.0-ggamma)+expect2, idebt, ires) 
 					# Since this function fails for gamma not equal to 2. we use the easy setup
 					#############
 					# This line has to change to a Brent's solver for ggamma not equal to 2
-					@inbounds setindex!(valuesatm, (bbeta-1.0)/(cons2+mextremes[1])+exp2, idebt, ires) 
+					@inbounds setindex!(valuesatm, (bbeta-1.0)/(cons2+mextremes[1])+expect2, idebt, ires) 
 					maxvaluesatmisneg=false
 				else
 					@inbounds setindex!(valuesatm, -Inf, idebt, ires)
@@ -64,7 +64,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 		@inbounds val1=getindex(valuesatm, threspolicy[thresnum, 1], threspolicy[thresnum, 2] )
 		@inbounds exp1=getindex(expvalue, threspolicy[thresnum, 1] , threspolicy[thresnum, 2] )
 		
-		consstar=0
+		consstar=0.0
 		mstar=mextremes[1]
 		# Check all choices that beat the current choice at LOWEST m.
 		# Since current is optimal at current threshold, there should be a lower threshold among current and candidate choice.
@@ -72,14 +72,14 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 		for ires=1:resnum
 			for idebt=1:debtnum # Entering a lot here. Perhaps use monotonicity to speed
 				@inbounds val2=valuesatm[idebt, ires]
-				@inbounds exp2=expvalue[idebt, ires]
-				expdiff=exp2-exp1
+				@inbounds expect2=expvalue[idebt, ires]
+				expdiff=expect2-exp1
 				if val2>val1+1e-14 && expdiff<-1e-14 # Here it is important to have strict inequality for the -Inf cases
 					@inbounds cons2=consexm[idebt, ires] # No need to asing outside
 					consdiff=cons2-cons1
 					#############
 					# This line has to change to a Brent's solver for gamma not equal to 2
-					mnew=-0.5*(cons1+cons2)+0.5*sqrt(consdiff^2-4.0*consdiff/expdiff*(1.0-bbeta))		
+					mnew=-0.5*(cons1+cons2)+0.5*sqrt(consdiff*consdiff-4.0*consdiff/expdiff*(1.0-bbeta))		
 					#############
 					consdiff=mstar-mnew # use as tempholder for mstar-mnew
 					if consdiff<1e-9 || (abs(consdiff)<2e-9 && cons2>consstar+1e-14)	# Here consdiff is mstar-mnew
