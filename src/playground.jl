@@ -85,11 +85,13 @@ basesolverparams=SolverParams(
 	)
 # 4.2 Solve routine and extract gaps 
 solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
+# basesolverparams.itermax=3
+@profile solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
 resiternum = floor(Int64, solveroutvec[1])
 valuegap = solveroutvec[2]
 pricegap = solveroutvec[3]
 defaultgap = solveroutvec[4]
-
+ 
 # 4.3 Save solved model
 jldopen(filename,"w") do file
 	write(file, "basemodel", basemodel)
@@ -133,6 +135,7 @@ print("  | ")
 showcompact(maximum([valuegap,pricegap,defaultgap]) )
 println("  |")
 println("======================================================================================================================")
+Profile.print()
 # 5.5. Save moments
 jldopen(filename,"r+") do file
 	write(file, "basemoments", basemoments)

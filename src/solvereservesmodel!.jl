@@ -42,9 +42,9 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	defaultflowutility[defaultflowutility.<0.0]=0.0
 	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1.0-model.econparams.ggamma).*(1.0-model.econparams.bbeta)
 	# Preallocation of temporary arrays
+	tempdr=Array{Float64}(debtnum,resnum)
 	tempdry=Array{Float64}(debtnum,resnum,ynum)
 	tempdryw=Array{Float64}(debtnum,resnum,ynum,regimenum)
-	temp2dryw=Array{Float64}(debtnum,resnum,ynum,regimenum)
 	tempdrmyw=Array{Float64}(debtnum,resnum,mnum,ynum,regimenum)
 	
 	tempry=Array{Float64}(resnum,ynum) 
@@ -112,32 +112,23 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) )
 		# 4. Find new price: take expectation over regime and output
 		if model.econparams.ggammalender!=0
-			# Create wtilde^(-gamma) from bondcashflow ad others
-			tempdrmyw.= ( (1.0+model.econparams.rfree).*model.econparams.wealthmean .- model.grids.debt.*
-							( (1.0+model.econparams.rfree).*reshape(model.bondprice, debtnum, resnum, 1, ynum, regimenum).-bondcashflow ) 
-							).^(-model.econparams.ggammalender)
-			# Create marginal utility of bond: cashflow*wtilde^(-gamma). 
-			bondcashflow.= tempdrmyw .* bondcashflow 
-			# Create E[wtilde^(-gamma)]
-			mexpectation!(tempdryw, tempdrmyw, model.grids.mmass)				
-			ywexpectation!(temp2dryw, tempdryw, 
-							model.grids.ytrans, model.grids.regimetrans, 1.0, 
-							tempdry)			
-		end
-		mexpectation!(tempdryw, sdata(bondcashflow), model.grids.mmass)
-		ywexpectation!(newbondprice, tempdryw, 
+			findnewprice!(newbondprice, # Output
+							sdata(bondcashflow), model.bondprice, model.grids::ModelGrids, # Inputs
+							1.0+model.econparams.rfree, model.econparams.ggammalender, model.econparams.wealthmean, # Inputs
+							tempdr) # Pre allocated temps
+		else
+			mexpectation!(tempdryw, sdata(bondcashflow), model.grids.mmass)
+			ywexpectation!(newbondprice, tempdryw, 
 							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),
 							tempdry)
-		if model.econparams.ggammalender!=0
-			newbondprice.= newbondprice./temp2dryw
 		end
 		# 5. Find gaps and update 
 		Base.LinAlg.BLAS.axpy!(-1.0, newvaluepay, model.valuepay)
 		maximum!(view(reservesmaxtemp,1:1), abs.(model.valuepay))
 		valuegap=reservesmaxtemp[1]/(1-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
 		setindex!(model.valuepay, newvaluepay, :)
-		# Cannot do the same, old price cannot be overwritten because of updatespeed. Recall tempdryw holds new bond price
-		setindex!(tempdryw, newbondprice, :)
+		# Cannot do the same, old price cannot be overwritten because of updatespeed. 
+		setindex!(tempdryw, newbondprice, :)	# Now tempdryw also holds new bond price
 		Base.LinAlg.BLAS.axpy!(-1.0, model.bondprice, tempdryw )
 		maximum!(view(reservesmaxtemp,1:1), abs.(tempdryw))
 		pricegap=reservesmaxtemp[1]
