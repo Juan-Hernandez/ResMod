@@ -34,8 +34,8 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	        @inbounds mstar=thresholds[idthres]
 	        @inbounds massgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff
 	        if idmtop>2 # Over all intervals before, default utility
-	            @inbounds valmgrid[1:(idmtop-2)]+=valuedefault
-	            @inbounds massgrid[1:(idmtop-2)]+=1
+	            @inbounds valmgrid[1:(idmtop-2)].+=valuedefault 	# lots of inference, used to be without the dot
+	            @inbounds massgrid[1:(idmtop-2)].+=1.0			# 
 	        end
 	    else # No default fill with care, 
 		    idmlow=ceil( Int64, (mstar-mextremes[1])/mdiff)+1 		# since mstar assigned once, mstar>mextremes[1] 

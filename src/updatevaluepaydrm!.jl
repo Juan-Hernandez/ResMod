@@ -51,7 +51,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 		# Consumption excluding M given future reserves.
 		for idebt=1:compuparams.debtnum
 			thresnum=0
-			# Revenue from issuance			
+			# Revenue from issuance. ######### THIS TWO BROADCASTS COULD BE FUSED IN SINGLE LOOP ALSO RETURNING MAXIMUM OF CONSEXM		
 			broadcast!(*, consexm, bondprice, grids.debt-(1.0-econparams.llambda)*grids.debt[idebt] )
 			# Consumption excluding M given future reserves, future debt.
 			broadcast!(+, consexm, cashinhandpay[idebt,ires], -reshape(grids.reserves,1,:)/(1.0+econparams.rfree), consexm)	# Chanded transpose to reshape for speed. If no improvement, try ./

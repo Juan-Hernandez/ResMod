@@ -30,7 +30,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 				# This depends on gamma==2
 				consdiff=cons2-cons1
 				expdiff=expect2-exp1
-				if (abs(expdiff)<1.1e-14 && consdiff>0.0) || (consdiff>-expdiff*(cons1+mstar)*(cons2+mstar)/(1.0-bbeta)) 
+				if expdiff>-1.1e-14 && consdiff>0.0 || (consdiff>-expdiff*(cons1+mstar)*(cons2+mstar)/(1.0-bbeta)) 
 					cons1=cons2
 					exp1=expect2
 					@inbounds threspolicy[1,1]=idebt
@@ -82,7 +82,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 					mnew=-0.5*(cons1+cons2)+0.5*sqrt(consdiff*consdiff-4.0*consdiff/expdiff*(1.0-bbeta))		
 					#############
 					consdiff=mstar-mnew # use as tempholder for mstar-mnew
-					if consdiff<1e-9 || (abs(consdiff)<2e-9 && cons2>consstar+1e-14)	# Here consdiff is mstar-mnew
+					if consdiff<1e-9 || consdiff<2e-9 && cons2>consstar+1e-14	# Here consdiff is mstar-mnew. Before had abs(condiff) 492/2658 profile
 						# Keep the highest mnew
 						mstar=mnew
 						consstar=cons2 

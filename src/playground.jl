@@ -23,7 +23,7 @@ basecompuparams=ComputationParams(
 	41,		# resnum::Int64
 	# Temporary (smoothing shock parameters)
 	0.006, 	# msigma::Float64
-	2.5,	# msdwidth::Float64u	# This is important for curvature on mmass. 2.0 is very flat and leads to poor convergence
+	2.5,	# msdwidth::Float64 	# This is important for curvature on mmass. 2.0 is very flat and leads to poor convergence
 	13,		# mnum::Int64
 	-100.0,	# thrmin::Float64
 	)
@@ -43,8 +43,8 @@ baseeconparams=EconParams(
 	ggamma,										# ggamma::Int64;  		# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 	# Risk free rate, lenders risk aversion and mean wealth
 	(rfree-growth)/(1.0+growth),		 		# rfree::Float64 		# 4% yearly
-	ggamma,										# ggamalender::Float64 	# Same as borrower. This could be changed to values different from 2.
-	1.5,										# wealthmean::Flotat64	# To calibrate with risk premium									
+	ggamma,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
+	1.5,										# wealthmean::Float64	# To calibrate with risk premium									
 	# Bond Maturity and coupon
 	(llambda+growth)/(1.0+growth), 				# llambda::Float64 		# 5 year avg maturity (6% avg quarterly debt service)
 	coupon-growth*(1.0-llambda)/(1.0+growth), 	# coupon:: Float64 
@@ -58,7 +58,7 @@ baseeconparams=EconParams(
 	# Expected Output grid parameters
 	0.7584, 	# logOutputRho::Float64
 	0.0982, 	# logOutputSigma::Float64
-	0.0,		# govtspending::Float64
+	0.12,		# govtspending::Float64
 	# Default output cost parameters
 	-0.455,		# defcost1::Float64
 	0.59195, 	# defcost2::Float64
