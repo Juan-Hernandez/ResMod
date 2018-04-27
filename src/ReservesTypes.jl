@@ -11,6 +11,7 @@ export solvedefaultvalue!, solvereservesmodel!, updatevaluepaydrm!
 export GGQthresholds!, defaultthresholds!, suddenstopthresholds!, integratethresholds!
 export findnewprice!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!
+export serialsolvereservesmodel!, momentsimulator!
 
 immutable ComputationParams
 	# Output grid lenght
@@ -213,6 +214,9 @@ include("getpolicies!.jl")
 include("simulatemodel!.jl")
 include("getmoments!.jl")
 include("moutputregimeexpectation!.jl")
+# Calibration
+include("momentsimulator!.jl")
+include("serialsolvereservesmodel!.jl")
 end # Module end
 
 

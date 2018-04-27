@@ -97,7 +97,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		# 		expectedvaluepay[ :, :, 3, 1], model.cashinhandpay[ :, :, 3], model.bondprice[:,:,3,1],
 		# 		newvaluedefault[ :, 3], model.policies.reservesindefault[:, 3], 1, model.econparams, model.compuparams, model.grids, true )		
 		# pmap requires shared arrays for inplace! outputs
-		pmap(updatevaluepaydrm!, [ view(newvaluepay, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: new value of paying
+		map(updatevaluepaydrm!, [ view(newvaluepay, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: new value of paying
 			[view(bondcashflow, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: bond cashflow after choices
 			[view(debtpolicy, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: new debt choice
 			[view(reservespolicy, :, :, :, iy, ir) for iy=1:ynum, ir=1:regimenum], # Output: reseves choice
