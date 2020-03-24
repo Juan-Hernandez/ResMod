@@ -62,9 +62,9 @@ basecompuparams=ComputationParams(
 basesolverparams=SolverParams(0.2, 0, 0, 40, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
-iternum=0
+iterstart=0
 itermax=256
-
+skip(calsequence,iterstart)
 # 2. Pallalel evaluation
 
 # 2.1 Output file initialization
