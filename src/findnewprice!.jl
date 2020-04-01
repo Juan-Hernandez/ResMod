@@ -16,6 +16,7 @@ for ioldregime=1:regimenum
 		for iregime=1:regimenum
 			for iy=1:ynum
 				for imshock=1:mnum
+				# Probability of transitioning from previuos old exogenous state to new exogenous state	
 				exotrans=grids.mmass[imshock]*grids.ytrans[ioldy, iy]*grids.regimetrans[ioldregime, iregime]
 					for ires=1:resnum
 						for idebt=1:debtnum
