@@ -71,7 +71,7 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 	    #     error('Integrated value for q too big')
 	    # end
 	    if maximum(massgrid)>(1+1e-12)
-	        error("Relative mass on interval exceeds 1")
+		error("Relative mass on interval exceeds 1. Parameters: $econparams")
 	    end
 	end
 

@@ -35,7 +35,7 @@ pivot=0.87 		# Pivot point for default cost
 # calsequence=SobolSeq(3, [20.0, 0.01, 0.3], [45.6, 0.09, 0.94])
 
 # 1.1.4 Four parameter vector [beta, lambda, par1, par2]
-calsequence=SobolSeq(4, [0.9796*1.0065, 38.0, 0.01, 0.3 ], [0.9812*1.0065, 54.0, 0.09, 0.94])
+calsequence=SobolSeq(4, [0.9796, 27.6, 0.01, 0.3 ], [0.9812, 40.4, 0.09, 0.94])
 
 
 # 1.2 Fixed computation parameters
@@ -61,7 +61,7 @@ basecompuparams=ComputationParams(
 basesolverparams=SolverParams(0.2, 0, 0, 800, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
-iterstart=0
+# iterstart=0
 itermax=2048
 ########### skip(calsequence,iterstart)
 
@@ -69,14 +69,14 @@ itermax=2048
 # 2. Pallalel evaluation
 
 # 2.1 Output file initialization
-outfilename="calilambdefBIG.txt"
+outfilename="calilambdefNGr.txt"
 calout=open(outfilename,"a")
 println(calout, "----------------------------------------------------------------------------------------------------------------------------------------------------")
 println(calout, "                  parvec                  |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
 close(calout)
 
 # 2.2 Original parameters (pre-growth transformation)
-growth=0.0065 		# Avg quarterly growth
+growth=0.0 		# Avg quarterly growth
 # bbeta=0.99		# TO CALIBRATE
 ggamma=2 			# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 rfree=0.01 			# 4% yearly
