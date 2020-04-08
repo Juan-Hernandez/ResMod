@@ -36,7 +36,7 @@ function rouwenhorst(N::Int, μ::Real, ρ::Real, σ::Real)
     end
 
     ψ = sqrt(N-1) * σ_y
-    w = collect(linspace(-ψ, ψ, N))
+    w = collect(range(-ψ, length=N, stop=ψ))
 
 
     w .+= μ   # center process around its mean (wbar / (1 - rho))

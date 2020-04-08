@@ -14,10 +14,10 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 	# 3.0 Loops and preliminaries.
 	# No need to preallocate outside since function will be parallelized
 	mnum::Int64=compuparams.mnum
-	consexm=Array{Float64}(compuparams.debtnum, compuparams.resnum)
+	consexm=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum)
 	# This is the main thresholds vector policies and size
-	thresholds=Array{Float64}(compuparams.debtnum*compuparams.resnum)
-	threspolicy=Array{Int64}(compuparams.debtnum*compuparams.resnum, 2)
+	thresholds=Array{Float64}(undef, compuparams.debtnum*compuparams.resnum)
+	threspolicy=Array{Int64}(undef, compuparams.debtnum*compuparams.resnum, 2)
 	thresnum::Int64=0
 	thresdefault=falses(compuparams.debtnum*compuparams.resnum)
 	# Minimum future debt given future reserves
@@ -26,22 +26,22 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 	relevantss::Bool=false
 	smallestMnodefdebt::Int64=0
 	# Interim allocations
-	valuesatm=Array{Float64}(compuparams.debtnum, compuparams.resnum)
+	valuesatm=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum)
 
-	interimthresholds=Array{Float64}(compuparams.debtnum)
-	interimthresdebt=Array{Int64}(compuparams.debtnum)
+	interimthresholds=Array{Float64}(undef, compuparams.debtnum)
+	interimthresdebt=Array{Int64}(undef, compuparams.debtnum)
 
 
-	interimthrespolicy=Array{Int64}(compuparams.debtnum*compuparams.resnum, 2)
+	interimthrespolicy=Array{Int64}(undef, compuparams.debtnum*compuparams.resnum, 2)
 	interimthresnum::Int64=0
 
-	interimnewthresholds=Array{Float64}(compuparams.debtnum*(compuparams.resnum+1) )
+	interimnewthresholds=Array{Float64}(undef, compuparams.debtnum*(compuparams.resnum+1) )
 	# small grid for values
-	smallvalgrid=Array{Float64}(mnum)
-	smallcashflowgrid=Array{Float64}(mnum)
-	smallmassgrid=Array{Float64}(mnum)
+	smallvalgrid=Array{Float64}(undef, mnum)
+	smallcashflowgrid=Array{Float64}(undef, mnum)
+	smallmassgrid=Array{Float64}(undef, mnum)
 	# small grid for policies
-	smallpolicygrid=Array{Int64}(mnum, 2)
+	smallpolicygrid=Array{Int64}(undef, mnum, 2)
 	smalldefaultgrid=falses(mnum)
 	
 
@@ -52,7 +52,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 		for idebt=1:compuparams.debtnum
 			thresnum=0
 			# Revenue from issuance. ######### THIS TWO BROADCASTS COULD BE FUSED IN SINGLE LOOP ALSO RETURNING MAXIMUM OF CONSEXM		
-			broadcast!(*, consexm, bondprice, grids.debt-(1.0-econparams.llambda)*grids.debt[idebt] )
+			broadcast!(*, consexm, bondprice, grids.debt.-(1.0-econparams.llambda)*grids.debt[idebt] )
 			# Consumption excluding M given future reserves, future debt.
 			broadcast!(+, consexm, cashinhandpay[idebt,ires], -reshape(grids.reserves,1,:)/(1.0+econparams.rfree), consexm)	# Chanded transpose to reshape for speed. If no improvement, try ./
 			# 3.0  	# Check for positive consumption options, if not, default is sure and return only one threhold

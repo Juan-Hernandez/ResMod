@@ -1,9 +1,10 @@
 module ReservesTypes
 
-using Base.LinAlg.BLAS
-using SpecialFunctions
-using JLD #Needed for solvereservesmodel! to be able to save intermediae iterations
-
+using LinearAlgebra # Also loads BLAS
+using SpecialFunctions # need to add
+VERSION<VersionNumber("0.7.0") ? using JLD : using JLD2 # Need to add
+using SharedArrays, Distributed
+using Random, Statistics
 export ComputationParams, EconParams, SolverParams, ModelGrids 
 export ReservesModel, ModelSimulation, ModelMoments
 export modelinitialize!, mexpectation!, ywexpectation!, mywreduce!
@@ -13,7 +14,7 @@ export findnewprice!, getpolicies!
 export simulatemodel!, moutputregimeexpectation!, getmoments!
 export serialsolvereservesmodel!, momentsimulator!
 
-immutable ComputationParams
+struct ComputationParams
 	# Output grid lenght
 	ynum::Int64
 	# Debt grid parameters
@@ -31,7 +32,7 @@ immutable ComputationParams
 	thrmin::Float64
 end
 
-immutable EconParams
+struct EconParams
 	# Consumer
 	bbeta::Float64
 	ggamma::Int64  # HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
@@ -59,7 +60,7 @@ end
 include("rouwenhorst.jl")
 include("makegrids.jl")
 
-immutable ModelGrids
+struct ModelGrids
 	# Output
 	y::Array{Float64,1}
 	ytrans::Array{Float64,2}
@@ -78,23 +79,23 @@ immutable ModelGrids
 	regimetrans::Array{Float64,2}	
 end
 
-immutable ModelPolicies
+struct ModelPolicies
 	reservesindefault::Array{Int64,3}
 	debt::Array{Int64,5}
 	reserves::Array{Int64,5}
 	default::BitArray{5}
 	# lenderchoice::Array{Float64,5}		# This is weird, mu = q*b'/W, is a float and not a policy. Required every iteration.
 	function ModelPolicies(compuparams::ComputationParams)
-		reservesindefault=Array{Int64}(compuparams.resnum, compuparams.ynum, 2)
-		debt=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
-		reserves=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
-		default=BitArray(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
+		reservesindefault=Array{Int64}(undef, compuparams.resnum, compuparams.ynum, 2)
+		debt=Array{Int64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
+		reserves=Array{Int64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
+		default=BitArray(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		# lenderchoice=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		new(reservesindefault, debt, reserves, default)
 	end
 end
 
-immutable ReservesModel
+struct ReservesModel
 	compuparams::ComputationParams
 	econparams::EconParams
 	grids::ModelGrids
@@ -105,9 +106,9 @@ immutable ReservesModel
 	cashinhandpay::Array{Float64,3}
 	function ReservesModel(compuparams::ComputationParams, econparams::EconParams)
 		grids::ModelGrids=makegrids(compuparams, econparams)
-		valuepay=Array{Float64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
-		valuedefault=Array{Float64}(compuparams.resnum, compuparams.ynum, 2)
-		bondprice=Array{Float64}(compuparams.debtnum, compuparams.resnum, compuparams.ynum, 2)
+		valuepay=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
+		valuedefault=Array{Float64}(undef, compuparams.resnum, compuparams.ynum, 2)
+		bondprice=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.ynum, 2)
 		policies=ModelPolicies(compuparams)
 		cashinhandpay=broadcast( +, -(econparams.llambda+econparams.coupon)*grids.debt, 
 								reshape( grids.reserves, 1, compuparams.resnum),
@@ -116,7 +117,7 @@ immutable ReservesModel
 	end
 end
 
-type SolverParams
+mutable struct SolverParams
 	# Price updating step
 	updatespeed::Float64
 	# First iteration counter
@@ -137,7 +138,7 @@ type SolverParams
 	end
 end
 
-immutable ModelSimulation
+struct ModelSimulation
 	periods::Int64
 	debtind::Array{Int64,1}
 	reservesind::Array{Int64,1}
@@ -151,22 +152,22 @@ immutable ModelSimulation
 	bondspread::Array{Float64,1}
 	function ModelSimulation(per::Int64)
 		periods=per
-		debtind=Array{Int64}(periods+1)
-		reservesind=Array{Int64}(periods+1)
-		mind=Array{Int64}(periods)
-		yind=Array{Int64}(periods)
-	    regime=Array{Int64}(periods)
-		defaultstate=Array{Bool}(periods+1)
-		randomshocks=Array{Float64}(periods, 4)
-		output=Array{Float64}(periods)
-		bondprice=Array{Float64}(periods)	
-		bondspread=Array{Float64}(periods)
+		debtind=Array{Int64}(undef, periods+1)
+		reservesind=Array{Int64}(undef, periods+1)
+		mind=Array{Int64}(undef, periods)
+		yind=Array{Int64}(undef, periods)
+	    regime=Array{Int64}(undef, periods)
+		defaultstate=Array{Bool}(undef, periods+1)
+		randomshocks=Array{Float64}(undef, periods, 4)
+		output=Array{Float64}(undef, periods)
+		bondprice=Array{Float64}(undef, periods)	
+		bondspread=Array{Float64}(undef, periods)
 		new(periods, debtind, reservesind, mind, yind, regime, defaultstate, randomshocks, output, bondprice, bondspread)	
 	end
 end
 
 
-type ModelMoments
+mutable struct ModelMoments
 	# Mean indices
 	debtmeanind::Int64
 	reservesmeanind::Int64

@@ -37,6 +37,6 @@ println(momparamtab, "	\$\\sigma_{\\nu}\$ & $(model.econparams.logoutputrho) &  
 println(momparamtab, "	\\bottomrule")
 println(momparamtab, "\\end{tabular}")
 close(momparamtab)
-
+cd(currdir)
 
 end # Function end

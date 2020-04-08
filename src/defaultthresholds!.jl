@@ -14,7 +14,7 @@ function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int
     vdiff::Float64=0.0
 
     # 1. Loop over current thresholds
-    thresdefault[1:thresnum]=false # Initially no default.
+    thresdefault[1:thresnum].=false # Initially no default.
     for idthres=1:thresnum # Run over current thresholds
         vdiff=valuedefault-expvalue[threspolicy[idthres, 1], threspolicy[idthres, 2]]
         if vdiff>-1e-6*(1.0-bbeta)*valtol # as flow utility is negative, default is sure
@@ -39,7 +39,7 @@ function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int
             interimnewthresholds[(interimthresnum+1):(interimthresnum+toappend)]=thresholds[idthres:thresnum]
             @inbounds interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 1]=threspolicy[idthres:thresnum, 1]
             @inbounds interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 2]=threspolicy[idthres:thresnum, 2]
-            thresdefault[(interimthresnum+1):(interimthresnum+toappend)]=false # No default again
+            thresdefault[(interimthresnum+1):(interimthresnum+toappend)].=false # No default again
             interimthresnum+=toappend
             firstdebtnodef=threspolicy[idthres, 1]
             break

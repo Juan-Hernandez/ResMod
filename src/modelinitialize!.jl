@@ -14,8 +14,8 @@ function modelinitialize!(model::ReservesModel)
 	current income and average default incoms plus return on reserves """
 	# First reserves, then output, then mshock (recall mshock to ZERO when default), finally regime
 	broadcast!( +, model.valuedefault, model.grids.reserves*rfree, 
-				reshape( rfree/(1+rfree-yrho).*model.grids.ydefault, 1, model.compuparams.ynum), 
-				(1-yrho)/(1+rfree-yrho)*Base.dot(model.grids.yergodic,model.grids.ydefault),
+				reshape( rfree/(1.0+rfree-yrho).*model.grids.ydefault, 1, model.compuparams.ynum), 
+				(1.0-yrho)/(1.0+rfree-yrho)*dot(model.grids.yergodic,model.grids.ydefault),
 				reshape([0.0,-0.001],1,1,2) )  					
 	#	ValDefReg=ValDefReg.^(1-ggamma)./((1-ggamma)*(1-bbeta)); # Not Normalized
 	model.valuedefault[:]=model.valuedefault[:].^(1-model.econparams.ggamma)./(1-model.econparams.ggamma) # Normalized Utility		
@@ -24,9 +24,9 @@ function modelinitialize!(model::ReservesModel)
 	broadcast!( +, model.valuepay, -model.grids.debt*coupon, model.grids.reserves'*rfree,
     			reshape( model.grids.mmidpoints, 1, 1, model.compuparams.mnum ),
 				reshape( rfree/(1+rfree-yrho).*model.grids.y, 1, 1, 1, model.compuparams.ynum )
-				+(1-yrho)/(1+rfree-yrho)*Base.dot(model.grids.yergodic,model.grids.y),
+				.+(1-yrho)/(1+rfree-yrho)*dot(model.grids.yergodic,model.grids.y),
     			reshape( [0.0,-0.005], 1, 1, 1, 1, 2) )
-	model.valuepay[model.valuepay.<0]=0.0
+	model.valuepay[model.valuepay.<0].=0.0
 	# ValPayAll=ValPayAll.^(1-ggamma)./((1-ggamma)*(1-bbeta)); # Not Normalized
 	model.valuepay[:]=model.valuepay.^(1-model.econparams.ggamma)./(1-model.econparams.ggamma) #Normalized Utility	
 	nothing

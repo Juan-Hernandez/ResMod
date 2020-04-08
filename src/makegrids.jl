@@ -11,41 +11,41 @@ function makegrids(computationparameters::ComputationParams,econparams::EconPara
 	# ergodic dist of y
 	yergodic::Array{Float64,1}=limitdist(ytrans)
 	# Output grid when default
-	ydefault::Array{Float64,1}=min.(y,y.*(1-econparams.defcost1-econparams.defcost2*y))
+	ydefault::Array{Float64,1}=min.(y,y.*(1.0.-econparams.defcost1.-econparams.defcost2.*y))
 	#Make sure YdefGrid is nondecreasing:
 	for i=2:computationparameters.ynum
 		ydefault[i]=maximum(ydefault[(i-1):i])
 	end
-	y=y-econparams.govtspend
-	ydefault=ydefault-econparams.govtspend
+	y=y.-econparams.govtspend
+	ydefault=ydefault.-econparams.govtspend
 
 	# Temporary shock grid for integration:
 	# Define intervals and use midpoints
-	mextremes::Array{Float64,1}=linspace(-computationparameters.msdwidth*computationparameters.msigma,
-											computationparameters.msdwidth*computationparameters.msigma,
-											computationparameters.mnum+1)
+	mextremes::Array{Float64,1}=range(-computationparameters.msdwidth*computationparameters.msigma,
+											stop=computationparameters.msdwidth*computationparameters.msigma,
+											length=computationparameters.mnum+1)
 	mmidpoints::Array{Float64,1}= [0.5 * (mextremes[i] + mextremes[i + 1]) for i = 1:length(mextremes) - 1] 
 	# Mass at each interval
 
 	# Use erf function \Phi(z)=0.5+0.5*erf(z/sqrt(2))
 
 	####
-	mmass::Array{Float64,1}=diff(0.5+0.5*erf.(mextremes/(sqrt(2)*computationparameters.msigma)))
+	mmass::Array{Float64,1}=diff(0.5.+0.5*erf.(mextremes/(sqrt(2)*computationparameters.msigma)))
 	mmass=mmass/sum(mmass)
 
 	# Debt Grid (vector): My debt is positive
-	debt::Array{Float64,1}=linspace(computationparameters.debtmin, computationparameters.debtmax, computationparameters.debtnum)
-	debtmaxss=Array{Int64}(computationparameters.debtnum)
+	debt::Array{Float64,1}=range(computationparameters.debtmin, stop=computationparameters.debtmax, length=computationparameters.debtnum)
+	debtmaxssind=Array{Int64}(undef,computationparameters.debtnum)
 	for idebt=1:computationparameters.debtnum
-		debtmaxss[idebt]=findlast( x->(x<=(1-econparams.llambda)*debt[idebt]), debt )
+		debtmaxssind[idebt]=findlast( x->(x<=(1-econparams.llambda)*debt[idebt]), debt )
 	end
 	# Reserves Grid (vector):
-	reserves::Array{Float64,1}=linspace(computationparameters.resmin, computationparameters.resmax, computationparameters.resnum)
+	reserves::Array{Float64,1}=range(computationparameters.resmin, stop=computationparameters.resmax, length=computationparameters.resnum)
 
 	# Regime transition:
 	regimetrans::Array{Float64,2}= [1.0-1.0/econparams.panicfrequency 1.0/econparams.panicfrequency; 1.0/econparams.panicduration 1.0-1.0/econparams.panicduration]
 	# Remember, first debt, second reserves, third Mshock, fourth output, fifth sudden stop
-	grids=ModelGrids( y, ytrans, yergodic, ydefault, mmidpoints, mextremes, mmass, debt, debtmaxss, reserves, regimetrans)
+	grids=ModelGrids( y, ytrans, yergodic, ydefault, mmidpoints, mextremes, mmass, debt, debtmaxssind, reserves, regimetrans)
 	return grids
 end
 

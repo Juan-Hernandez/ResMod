@@ -14,9 +14,9 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel, fixsee
 	else
 		rand!(simulated.randomshocks)
 	end
-	cumytrans=Array{Float64}(model.compuparams.ynum, model.compuparams.ynum)
-	cumsum!(cumytrans, model.grids.ytrans, 2)
-	cummmass=Array{Float64}(model.compuparams.mnum)
+	cumytrans=Array{Float64}(undef, model.compuparams.ynum, model.compuparams.ynum)
+	cumsum!(cumytrans, model.grids.ytrans, dims=2)
+	cummmass=Array{Float64}(undef, model.compuparams.mnum)
 	cumsum!(cummmass, model.grids.mmass)
 	
 	# Longindex to avoid several calls
@@ -37,8 +37,8 @@ function simulatemodel!(simulated::ModelSimulation, model::ReservesModel, fixsee
 			simulated.defaultstate[idper]=(simulated.randomshocks[idper,4]>model.econparams.reentry) # Chance of reentry
 		end
 		# Default in current period
-		longstateindex=sub2ind(size(model.policies.debt), simulated.debtind[idper], simulated.reservesind[idper], 
-									simulated.mind[idper], simulated.yind[idper], simulated.regime[idper] )
+		longstateindex=LinearIndices(model.policies.debt)[ simulated.debtind[idper], simulated.reservesind[idper], 
+									simulated.mind[idper], simulated.yind[idper], simulated.regime[idper] ]
 		if !simulated.defaultstate[idper]
 			simulated.defaultstate[idper]=model.policies.default[longstateindex]
 		end

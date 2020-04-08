@@ -94,7 +94,7 @@ function GGQthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int64,2
 		end
 	end
 	# Revert the vectors
-	@inbounds thresholds[1:thresnum]=flipdim(thresholds[1:thresnum], 1)
-	@inbounds threspolicy[1:thresnum, :]=flipdim(threspolicy[1:thresnum, :], 1)
+	@inbounds thresholds[1:thresnum]=reverse(thresholds[1:thresnum], dims=1)
+	@inbounds threspolicy[1:thresnum, :]=reverse(threspolicy[1:thresnum, :], dims=1)
 	return thresnum
 end

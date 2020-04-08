@@ -6,7 +6,7 @@
 
 # 0. Load packages and definitions
 using ReservesTypes
-using JLD
+VERSION<VersionNumber("0.7.0") ? using JLD : using JLD2
 filename="playground.jld"	
 
 # 1. Computation Parameters
@@ -77,16 +77,16 @@ modelinitialize!(basemodel)
 basesolverparams=SolverParams(
 	0.2, 	# updatespeed::Float64 		# 0.25 generates some convergence problems.
 	0, 		# startiternum::Int64
-	20,		# interprint::Int64 
-	801,	# itermax::Int64
-	800, 	# intermediatesave::Int64
-	false,	# policiesout::Bool
+	1,		# interprint::Int64 
+	4,	# itermax::Int64
+	3, 	# intermediatesave::Int64
+	true,	# policiesout::Bool
 	1e-5, 	# valtol::Float64 
 	)
 # 4.2 Solve routine and extract gaps 
 solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
 # basesolverparams.itermax=3
-@profile solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
+# Profile.@profile solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
 resiternum = floor(Int64, solveroutvec[1])
 valuegap = solveroutvec[2]
 pricegap = solveroutvec[3]
@@ -112,30 +112,30 @@ flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 ob
 # 5.4 Print Moments
 println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	| sprXgrowth |   maxgap   |")
 println("----------------------------------------------------------------------------------------------------------------------")
-showcompact(basemoments.debtmean)
+show(IOContext(stdout, :compact => true), basemoments.debtmean)
 print("  | ")
-showcompact(basemoments.reservesmean)
+show(IOContext(stdout, :compact => true), basemoments.reservesmean)
 print("  | ")
-showcompact(basemoments.spreadmean)
+show(IOContext(stdout, :compact => true), basemoments.spreadmean)
 print(" | ")
-showcompact(basemoments.spreadsigma)
+show(IOContext(stdout, :compact => true), basemoments.spreadsigma)
 print(" | ")
-showcompact(basemoments.defaultstatemean)
+show(IOContext(stdout, :compact => true), basemoments.defaultstatemean)
 print("  | ")
-showcompact(basemoments.defaultchoicemean)
+show(IOContext(stdout, :compact => true), basemoments.defaultchoicemean)
 print("  | ")
-showcompact(basemoments.spreadXgdp)
+show(IOContext(stdout, :compact => true), basemoments.spreadXgdp)
 print("  | ")
-showcompact(basemoments.spreadXgrowth)
+show(IOContext(stdout, :compact => true), basemoments.spreadXgrowth)
 print("  | ")
-showcompact(basemoments.deltaspreadXgdp)
+show(IOContext(stdout, :compact => true), basemoments.deltaspreadXgdp)
 print("  | ")
-showcompact(basemoments.deltaspreadXgrowth)
+show(IOContext(stdout, :compact => true), basemoments.deltaspreadXgrowth)
 print("  | ")
-showcompact(maximum([valuegap,pricegap,defaultgap]) )
+show(IOContext(stdout, :compact => true), maximum([valuegap,pricegap,defaultgap]) )
 println("  |")
 println("======================================================================================================================")
-Profile.print()
+# Profile.print()
 # 5.5. Save moments
 jldopen(filename,"r+") do file
 	write(file, "basemoments", basemoments)

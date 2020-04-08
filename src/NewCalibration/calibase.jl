@@ -1,19 +1,19 @@
 # This is now a script
 #module serialsobol
 #
-Pkg.add("Sobol")
+# Pkg.add("Sobol")
 using Sobol
-
+# using Distributed
 # addprocs(3)	# Process allocated outside
 # using ClusterManagers
 # ClusterManagers.addprocs_sge(59,queue="all.q",qsub_env="LD_LIBRARY_PATH")
 
-cd("..")
-push!(LOAD_PATH,pwd())
-@everywhere using Base.LinAlg.BLAS
+@everywhere cd("..")
+@everywhere push!(LOAD_PATH,pwd())
+@everywhere using LinearAlgebra
 @everywhere using ReservesTypes
 
-cd("\NewCalibration")
+@everywhere cd(".\\NewCalibration")
 
 # 1. Define parameters
 growth=0.0065		# Quarterly growth rate
@@ -59,17 +59,17 @@ basecompuparams=ComputationParams(
 	)
 
 # 1.3 Solver parameters
-basesolverparams=SolverParams(0.2, 0, 0, 800, 5000, false, 1e-05)
+basesolverparams=SolverParams(0.2, 0, 0, 8, 5000, false, 1e-05)
 
 # 1.4 Itereation control and output print
 iterstart=0
-itermax=256
-skip(calsequence,iterstart)
+itermax=4
+#skip(calsequence,iterstart)
 
 # 2. Pallalel evaluation
 
 # 2.1 Output file initialization
-outfilename="calibtwo.txt"
+outfilename="calibzero1.txt"
 calout=open(outfilename,"a")
 println(calout, "----------------------------------------------------------------------------------------------------------------------------------------------------")
 println(calout, "                  parvec                  |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
@@ -110,7 +110,7 @@ pmap( momentsimulator!, Iterators.repeated(basecompuparams,itermax),
 		24.0, 										# panicfrequency::Float64 -- One every 16 quarters
 		8.0   										# panicduration::Float64 -- 8 quarters
 		)
-	for parvec in [next(calsequence) for id=1:itermax] ],
+	for parvec in [next!(calsequence) for id=1:itermax] ],
 	Iterators.repeated(basesolverparams,itermax), Iterators.repeated(outfilename,itermax) )	
 
 calout=open(outfilename,"a")	
