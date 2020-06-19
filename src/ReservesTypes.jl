@@ -10,7 +10,7 @@ export ReservesModel, ModelSimulation, ModelMoments
 export modelinitialize!, mexpectation!, ywexpectation!, mywreduce!
 export solvedefaultvalue!, solvereservesmodel!, updatevaluepaydrm!
 export GGQthresholds!, defaultthresholds!, suddenstopthresholds!, integratethresholds!
-export findnewprice!, getpolicies!
+export findnewprice!, getpolicies!, findnewpriceCARA!
 export simulatemodel!, moutputregimeexpectation!, getmoments!
 export serialsolvereservesmodel!, momentsimulator!
 
@@ -209,6 +209,7 @@ include("suddenstopthresholds!.jl")
 include("integratethresholds!.jl")
 include("mywreduce!.jl")
 include("findnewprice!.jl")
+include("findnewpriceCARA!.jl")
 include("getpolicies!.jl")
 
 # Simulation 

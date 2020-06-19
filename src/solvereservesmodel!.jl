@@ -112,10 +112,14 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) )
 		# 4. Find new price: take expectation over regime and output
 		if model.econparams.ggammalender!=0
-			findnewprice!(newbondprice, # Output
-							sdata(bondcashflow), model.bondprice, model.grids::ModelGrids, # Inputs
-							1.0+model.econparams.rfree, model.econparams.ggammalender, model.econparams.wealthmean, # Inputs
-							tempdr) # Pre allocated temps
+			# findnewprice!(newbondprice, # Output
+			# 				sdata(bondcashflow), model.bondprice, model.grids::ModelGrids, # Inputs
+			# 				1.0+model.econparams.rfree, model.econparams.ggammalender, model.econparams.wealthmean, # Inputs
+			# 				tempdr) # Pre allocated temps
+			findnewpriceCARA!(newbondprice, # Output
+						sdata(bondcashflow), model.grids, # Inputs
+						1.0+model.econparams.rfree, model.econparams.ggammalender, # Inputs
+						tempdrmyw, tempdryw, tempdry) # preallocated temps
 		else
 			mexpectation!(tempdryw, sdata(bondcashflow), model.grids.mmass)
 			ywexpectation!(newbondprice, tempdryw, 
