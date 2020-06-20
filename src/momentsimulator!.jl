@@ -5,7 +5,7 @@ modelinitialize!(innermodel)
 
 # 2.3. # Call solver routine
 
-solveroutvec=serialsolvereservesmodel!(innermodel, solverparams)	
+solveroutvec=solvereservesmodel!(innermodel, solverparams, false)	
 resiternum = floor(Int64, solveroutvec[1])
 valuegap = solveroutvec[2]
 pricegap = solveroutvec[3]

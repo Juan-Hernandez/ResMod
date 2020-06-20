@@ -69,7 +69,7 @@ itermax=4
 # 2. Pallalel evaluation
 
 # 2.1 Output file initialization
-outfilename="calibzero1.txt"
+outfilename="calibzero2.txt"
 calout=open(outfilename,"a")
 println(calout, "----------------------------------------------------------------------------------------------------------------------------------------------------")
 println(calout, "                  parvec                  |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
@@ -91,7 +91,7 @@ pmap( momentsimulator!, Iterators.repeated(basecompuparams,itermax),
 		ggamma,										# ggamma::Int64;  # HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 		# Risk free rate, lenders risk aversion and mean wealth
 		(rfree-growth)/(1.0+growth),				# rfree::Float64 		
-		ggamma,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
+		ggamma+2,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
 		parvec[2],									# wealthmean::Flotat64	# To calibrate with risk premium
 		# Bond Maturity and coupon
 		(llambda+growth)/(1.0+growth), 				# llambda::Float64 		# 5 year avg maturity 

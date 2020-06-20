@@ -1,5 +1,6 @@
-function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
-
+function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), parallelbool=true)
+# 0. Preliminaries
+# 0.0 Unpack counters, parameters and booleans
 	resiternum::Int64=solverparams.startiternum
 	iterprint::Int64=solverparams.iterprint 
 	itermax::Int64=solverparams.itermax 
@@ -7,60 +8,62 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	policiesout::Bool=solverparams.policiesout
 	updatespeed::Float64=solverparams.updatespeed
 	printbool::Bool=iterprint!=0
-
-	# Unpack counters
 	debtnum::Int64=model.compuparams.debtnum
 	resnum::Int64=model.compuparams.resnum
 	ynum::Int64=model.compuparams.ynum
 	mnum::Int64=model.compuparams.mnum
 	regimenum::Int64=size(model.grids.regimetrans,1)
 	exonum::Int64=regimenum*ynum
-
-	# Holder for new value functions
+# 0.1 Preallocate Arrays 
+	# 0.1.1 Holder for new value functions and policies
 	newbondprice=Array{Float64}(undef, debtnum, resnum, ynum, regimenum)
-	bondcashflow=SharedArray{Float64}(debtnum, resnum, mnum, ynum, regimenum)
 	newvaluedefault=Array{Float64}(undef, resnum, ynum, regimenum)
-	newvaluepay=SharedArray{Float64}(debtnum, resnum, mnum, ynum, regimenum)
-	# Also need to allocate policies in shared arrays
-	debtpolicy=SharedArray{Int64}(debtnum, resnum, mnum, ynum, regimenum)
-	reservespolicy=SharedArray{Int64}(debtnum, resnum, mnum, ynum, regimenum)
-	defaultpolicy=SharedArray{Bool}(debtnum, resnum, mnum, ynum, regimenum)
-
-	# initial values for error
-	valuegap::Float64=10.0*solverparams.valtol
-	pricegap::Float64=10.0*solverparams.valtol
-	defaultgap::Float64=10.0*solverparams.valtol
-	solveroutvec=Array{Float64}(undef, 4) # This will hold gaps and iternum as solvereservesmodel! output
-	# Holder for exogenous expectation
-	expectedvaluepay=Array{Float64}(undef, debtnum,resnum,ynum,regimenum)
-	# Preallocate intermediate stages
-
-	# Flow utility matrix after default and chossing FUTURE reserves.
-	# (futurereserves, currentreserves, currentoutput)
-	defaultflowutility=Array{Float64}(undef, resnum,resnum,ynum)
-	broadcast!(+, defaultflowutility, -model.grids.reserves./(1.0+model.econparams.rfree), model.grids.reserves', reshape(model.grids.ydefault,1,1,ynum))
-	defaultflowutility[defaultflowutility.<0.0].=0.0
-	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1-model.econparams.ggamma).*(1.0-model.econparams.bbeta)
-	# Preallocation of temporary arrays
+	if parallelbool # Allocate shared arrays
+		bondcashflow=SharedArray{Float64}(debtnum, resnum, mnum, ynum, regimenum)
+		newvaluepay=SharedArray{Float64}(debtnum, resnum, mnum, ynum, regimenum)
+		# Also need to allocate policies in shared arrays
+		debtpolicy=SharedArray{Int64}(debtnum, resnum, mnum, ynum, regimenum)
+		reservespolicy=SharedArray{Int64}(debtnum, resnum, mnum, ynum, regimenum)
+		defaultpolicy=SharedArray{Bool}(debtnum, resnum, mnum, ynum, regimenum)
+	else
+		bondcashflow=Array{Float64}(undef, debtnum, resnum, mnum, ynum, regimenum)
+		newvaluepay=Array{Float64}(undef, debtnum, resnum, mnum, ynum, regimenum)
+		debtpolicy=Array{Int64}(undef, debtnum, resnum, mnum, ynum, regimenum)
+		reservespolicy=Array{Int64}(undef, debtnum, resnum, mnum, ynum, regimenum)
+		defaultpolicy=Array{Bool}(undef, debtnum, resnum, mnum, ynum, regimenum)
+	end
+	# 0.1.2 Other outputs and temporary storage arrays
+	# 0.1.2.1 Outputs
+	solveroutvec=Array{Float64}(undef, 4) # Holds gaps and iternum, returned by as solvereservesmodel!
+	expectedvaluepay=Array{Float64}(undef, debtnum,resnum,ynum,regimenum) 	# Holder for exogenous expectation
+	# 0.1.2.2 Temporary arrays
 	tempdr=Array{Float64}(undef, debtnum, resnum)
 	tempdry=Array{Float64}(undef, debtnum, resnum, ynum)
 	tempdryw=Array{Float64}(undef, debtnum, resnum, ynum, regimenum)
 	tempdrmyw=Array{Float64}(undef, debtnum, resnum, mnum, ynum, regimenum)
-	
 	tempry=Array{Float64}(undef, resnum, ynum) 
 	temprr=Array{Float64}(undef, resnum, resnum)
 	tempryw=Array{Float64}(undef, resnum, ynum, regimenum) 
-	
     reservesmaxtemp=Array{Float64}(undef, 1, resnum)
     reservesidtemp=Array{CartesianIndex{2}}(undef, 1, resnum)
-    
-
+# 0.2. Initialize values 
+	# 0.2.1 Set initial values for error
+	valuegap::Float64=10.0*solverparams.valtol
+	pricegap::Float64=10.0*solverparams.valtol
+	defaultgap::Float64=10.0*solverparams.valtol
+	# 0.2.2 Initialize flow utility matrix after default and choosing FUTURE reserves.
+	# (futurereserves, currentreserves, currentoutput)
+	defaultflowutility=Array{Float64}(undef, resnum,resnum,ynum)
+	broadcast!(+, defaultflowutility, -model.grids.reserves./(1.0+model.econparams.rfree), model.grids.reserves', reshape(model.grids.ydefault,1,1,ynum))
+	defaultflowutility[defaultflowutility.<0.0].=0.0
+	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1-model.econparams.ggamma).*(1.0-model.econparams.bbeta)  
+# 0.3 Main loop
+	# Preprint and intialize time counter
     printbool && println("        valuegap         |        pricegap         |   iternum  | time (sec) |")
-
-    # Main loop
     starttime=time()
+	# While condition    
 	while resiternum<itermax && (max(valuegap, pricegap, defaultgap)>=solverparams.valtol || !policiesout)
-		# 0. Output and update controls
+# 1. Output and update controls
 		# Increase iteration counter
 		resiternum+=1
 		# Set intermediate save
@@ -78,16 +81,16 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		(max(valuegap, pricegap, defaultgap)<=solverparams.valtol) && (policiesout=true)
 		(resiternum==itermax) && (policiesout=true)
 
-		# 1. Expectation on exogenous varaibles
+# 2. Expectation over exogenous varaibles
 		mexpectation!(tempdryw, model.valuepay, model.grids.mmass)
 		ywexpectation!(expectedvaluepay, tempdryw, # here tempdry has the expectation over mshock 
 							model.grids.ytrans, model.grids.regimetrans,model.econparams.bbeta,tempdry)
 		
-		# 2. update value of default
+# 3. update value of default
 		defaultgap=solvedefaultvalue!(model, expectedvaluepay, defaultflowutility, newvaluedefault, 
 								tempryw, reservesmaxtemp, reservesidtemp, temprr, tempry, solverparams.valtol)
-		# 3. Update value function: parallel for each set of exogenous states. 
-			# Here i need to use comprehensions to pass values (no need to predefine oustide the loop)
+# 4. Update value function: parallel for each set of exogenous states. 
+			# Need to use comprehensions to pass values (no need to predefine oustide the loop)
 			# pmap is enough since function return is inplaced
 			# Careful, use view() for those arrays you want to be referenced. [:,:,:] is good for those that can be copied.
 			# Since we are pmapping, 		
@@ -109,8 +112,9 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 			[model.policies.reservesindefault[:, iy, ir] for iy=1:ynum, ir=1:regimenum], # Input: reserves choice in default from 2.
 			[cld(iyr, ynum) for iyr=1:exonum], # Input: regimenum
 			Iterators.repeated( solverparams.valtol, exonum), Iterators.repeated( model.econparams, exonum), Iterators.repeated( model.compuparams, exonum), 
-			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) )
-		# 4. Find new price: take expectation over regime and output
+			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) 
+			; distributed=parallelbool) # This last line switches from seria lto parallel computation
+# 5. Find new price: take expectation over regime and output
 		if model.econparams.ggammalender!=0
 			# findnewprice!(newbondprice, # Output
 			# 				sdata(bondcashflow), model.bondprice, model.grids::ModelGrids, # Inputs
@@ -126,26 +130,30 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),
 							tempdry)
 		end
-		# 5. Find gaps and update 
+# 6. Find gaps and update 
+	# 6.1 Value function gap
 		axpy!(-1.0, newvaluepay, model.valuepay)
 		maximum!(view(reservesmaxtemp,1:1), abs.(model.valuepay))
 		valuegap=reservesmaxtemp[1]/(1-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
+	# 6.2 Value function update
 		setindex!(model.valuepay, newvaluepay, :)
+	# 6.3 Price gap 
 		# Cannot do the same, old price cannot be overwritten because of updatespeed. 
 		setindex!(tempdryw, newbondprice, :)	# Now tempdryw also holds new bond price
 		axpy!(-1.0, model.bondprice, tempdryw )
 		maximum!(view(reservesmaxtemp,1:1), abs.(tempdryw))
 		pricegap=reservesmaxtemp[1]
-		# Update Control
+	# 6.4 Price update
 		# No need for scal, use axpby! BLAS.scal!(debtnum*resnum*ynum*regimenum, 1.0-updatespeed, model.bondprice, 1 )
 		axpby!(updatespeed, newbondprice, 1.0-updatespeed, model.bondprice )
-		# update policies
+	# 6.5 Policies update 
 	    if policiesout
 			setindex!(model.policies.debt, debtpolicy, :)
 			setindex!(model.policies.reserves, reservespolicy, :)
 			setindex!(model.policies.default, BitArray(defaultpolicy), :)
 		end		
-    	# 5.1 Print intermediate output
+# 7. Intermediate results 
+	# 7.1 Print intermediate output
     	if printbool && mod1(resiternum,iterprint)==iterprint
 	    	print("       ")
 		    show(IOContext(stdout, :compact=> true), valuegap)
@@ -158,7 +166,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	    	println("  |")
 	    	
 	    end
-	    # 5.2 Save intermediate step
+    # 7.2 Save intermediate step
 		if mod1(resiternum,intermediatesave)==intermediatesave
 			jldopen("debugmodels.jld", "w") do file
 				write(file, "basemodel", model)
@@ -170,8 +178,9 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 		# # Just to exit quickly
 		# valuegap=0
 		# pricegap=0
-	end
+	end # While loop end
 
+# 8. Print final results and return
 	if printbool && resiternum%iterprint!=0 # Print last iteration
     	print("       ")
 	    show(IOContext(stdout, :compact=> true), valuegap)
@@ -186,8 +195,5 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams())
 	solveroutvec = [convert(Float64, resiternum),valuegap, pricegap, defaultgap]
 	return solveroutvec
 end # Function End
-
-#solvereservesmodel!(model::ReservesModel)=solvereservesmodel!(model, SolverParams( ))
-#solvereservesmodel!(model::ReservesModel, x::Any)=solvereservesmodel!(model, SolverParams(x...))
 
 
