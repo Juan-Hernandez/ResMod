@@ -113,7 +113,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 			[cld(iyr, ynum) for iyr=1:exonum], # Input: regimenum
 			Iterators.repeated( solverparams.valtol, exonum), Iterators.repeated( model.econparams, exonum), Iterators.repeated( model.compuparams, exonum), 
 			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) 
-			; distributed=parallelbool) # This last line switches from seria lto parallel computation
+			; distributed=parallelbool) # This last line switches from serial to parallel computation
 # 5. Find new price: take expectation over regime and output
 		if model.econparams.ggammalender!=0
 			# findnewprice!(newbondprice, # Output

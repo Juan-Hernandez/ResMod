@@ -65,7 +65,7 @@ function defaultthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{Int
             interimnewthresholds[(interimthresnum+1):(interimthresnum+toappend)]=thresholds[idthres:thresnum]
             interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 1]=threspolicy[idthres:thresnum, 1]
             interimthrespolicy[(interimthresnum+1):(interimthresnum+toappend), 2]=threspolicy[idthres:thresnum, 2]
-            thresdefault[(interimthresnum+1):(interimthresnum+toappend)]=false # No default again
+            thresdefault[(interimthresnum+1):(interimthresnum+toappend)].=false # No default again
             interimthresnum+=toappend
             firstdebtnodef=threspolicy[idthres, 1]
             break
