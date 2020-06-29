@@ -137,7 +137,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 
 # 6. Find gaps and update 
 	# 6.1 Value function gap
-		debugbool && (valmin,valmax)=extrema(newvaluepay)
+		debugbool && ((valmin,valmax)=extrema(newvaluepay))
 		axpy!(-1.0, newvaluepay, model.valuepay)
 		maximum!(view(reservesmaxtemp,1:1), abs.(model.valuepay))
 		valuegap=reservesmaxtemp[1]/(1.0-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
@@ -145,7 +145,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 		setindex!(model.valuepay, newvaluepay, :)
 	# 6.3 Price gap 
 		# Cannot do the same, old price cannot be overwritten because of updatespeed. 
-		debugbool && (pricemin,pricemax)=extrema(newbondprice)
+		debugbool && ((pricemin,pricemax)=extrema(newbondprice))
 		debugbool && pricemin<0.0 && error("negative newbondprice")
 		setindex!(tempdryw, newbondprice, :)	# Now tempdryw also holds new bond price
 		axpy!(-1.0, model.bondprice, tempdryw )

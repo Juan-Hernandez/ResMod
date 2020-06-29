@@ -33,11 +33,11 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 		# 3.1.1 Fill current interval: [idmtop-1] < threshold , [idmtop]
 			@inbounds valmgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff*valuedefault
 			@inbounds mstar=thresholds[idthres]
-			debugbool && massgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff
+			debugbool && (massgrid[idmtop-1]+=(thresholds[idthres]-mextremes[idmtop-1])/mdiff)
 		# 3.1.2 Fill all intervals before with default utility (no need to add anything to price)
 			if idmtop>2 
 				@inbounds valmgrid[1:(idmtop-2)].+=valuedefault
-				debugbool && massgrid[1:(idmtop-2)].+=1.0			# 
+				debugbool && (massgrid[1:(idmtop-2)].+=1.0)			# 
 			end
 		else 
 	# 3.2 Deal with non-default thresholds
@@ -61,7 +61,7 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 				@inbounds currentvalue+=expvalue[ thisthresdebt, thisthresres ] # plus continuation value
 				@inbounds valmgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1.0)*currentvalue
 				@inbounds pricegrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1.0)*currentprice
-				debugbool && massgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1.0)
+				debugbool && (massgrid[idj-1]+=min((mextremes[idj]-mstar)/mdiff, 1.0))
 			end
 		# 3.2.2 Fill current interval [idmtop-1] < threshold	
 			currentvalue=consexm[ thisthresdebt, thisthresres ] + 0.5*(max(mextremes[idmtop-1], mstar)+thresholds[idthres])
@@ -71,7 +71,7 @@ function integratethresholds!( valmgrid::Array{Float64,1},	pricegrid::Array{Floa
 			   @inbounds currentvalue+=expvalue[ thisthresdebt, thisthresres ]
 			   @inbounds valmgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentvalue
 			   @inbounds pricegrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff*currentprice
-			   debugbool && massgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff
+			   debugbool && (massgrid[idmtop-1]+=(thresholds[idthres]-max(mextremes[idmtop-1], mstar))/mdiff)
 			   @inbounds mstar=thresholds[idthres]
 		end
 	# 3.3 Check no excess mass integrated in any interval

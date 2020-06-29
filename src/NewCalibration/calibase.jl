@@ -1,6 +1,5 @@
 # This is now a script
 #module serialsobol
-
 using Sobol
 using Distributed
 # addprocs(3)	# Process allocated outside
@@ -11,9 +10,9 @@ using Distributed
 @everywhere push!(LOAD_PATH,pwd())
 @everywhere using LinearAlgebra
 @everywhere using ReservesTypes
-@everywhere cd(".\\NewCalibration")
+@everywhere Sys.iswindows() ? cd(".\\NewCalibration") : cd(".//NewCalibration")
 
-# 1. Insrt parameters 
+# 1. Insert parameters 
 
 include("calitestparameters.jl")
 
