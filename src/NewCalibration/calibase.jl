@@ -20,7 +20,6 @@ include("calitestparameters.jl")
 # 2. Pallalel evaluation
 
 # 2.1 Output file initialization
-outfilename="calibzero2.txt"
 calout=open(outfilename,"a")
 println(calout, "----------------------------------------------------------------------------------------------------------------------------------------------------")
 println(calout, "                  parvec                  |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")

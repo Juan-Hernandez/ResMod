@@ -17,35 +17,37 @@ include("testparameters.jl")
 basemodel=ReservesModel(basecompuparams,baseeconparams)
 modelinitialize!(basemodel)
 
-# 4. Solve model
-
-# 4.2 Solve routine and extract gaps 
+# 3. Solve model
+# 3.1 Solve routine and extract gaps 
 solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
+# # 3.1.1 Profiling
 # basesolverparams.itermax=3
 # Profile.@profile solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
+
+# 3.2 Extract gaps
 resiternum = floor(Int64, solveroutvec[1])
 valuegap = solveroutvec[2]
 pricegap = solveroutvec[3]
 defaultgap = solveroutvec[4]
  
-# 4.3 Save solved model
+# 3.3 Save solved model
 jldopen(filename,"w") do file
 	write(file, "basemodel", basemodel)
 	write(file, "basesolverparams", basesolverparams)
 end	
 
-# 5. Simulate and get moments
-# 5.1. Simulate model
+# 4. Simulate and get moments
+# 4.1. Simulate model
 basesimul=ModelSimulation(100000)
 simulatemodel!(basesimul,basemodel,true)
-# 5.2 Save simulated
+# 4.2 Save simulated
 jldopen(filename,"r+") do file
 	write(file, "basesimul", basesimul)
 end
-# 5.3. Obtain moments
+# 4.3. Obtain moments
 basemoments=ModelMoments()
 flag=getmoments!(basemoments, basesimul, basemodel.grids, 1000) # burnin 1000 observations
-# 5.4 Print Moments
+# 4.4 Print Moments
 println("	debt	|	reserves	|	spravg		|	sprvar		|	defstat		|	defchoice	| sprXgrowth |   maxgap   |")
 println("----------------------------------------------------------------------------------------------------------------------")
 show(IOContext(stdout, :compact => true), basemoments.debtmean)
@@ -72,7 +74,7 @@ show(IOContext(stdout, :compact => true), maximum([valuegap,pricegap,defaultgap]
 println("  |")
 println("======================================================================================================================")
 # Profile.print()
-# 5.5. Save moments
+# 4.5. Save moments
 jldopen(filename,"r+") do file
 	write(file, "basemoments", basemoments)
 end	

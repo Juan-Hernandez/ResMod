@@ -61,22 +61,26 @@ include("rouwenhorst.jl")
 include("makegrids.jl")
 
 struct ModelGrids
-	# Output
+	# 1 Output
 	y::Array{Float64,1}
 	ytrans::Array{Float64,2}
 	yergodic::Array{Float64,1}
 	ydefault::Array{Float64,1}
-	# m-shock
+	# 2 m-shock
 	mmidpoints::Array{Float64,1}
 	mextremes::Array{Float64,1}
 	mmass::Array{Float64,1}
-	# debt
+	# 3 debt
 	debt::Array{Float64,1}
 	debtmaxss::Array{Int64,1}
-	# reserves
+	# 4 reserves
 	reserves::Array{Float64,1}
-	# regime
-	regimetrans::Array{Float64,2}	
+	# 5 regime
+	regimetrans::Array{Float64,2}
+	function ModelGrids(compuparams::ComputationParams, econparams::EconParams)
+		( y, ytrans, yergodic, ydefault, mmidpoints, mextremes, mmass, debt, debtmaxssind, reserves, regimetrans)=makegrids(compuparams,econparams)
+		new( y, ytrans, yergodic, ydefault, mmidpoints, mextremes, mmass, debt, debtmaxssind, reserves, regimetrans)
+	end
 end
 
 struct ModelPolicies
@@ -105,7 +109,7 @@ struct ReservesModel
 	policies::ModelPolicies
 	cashinhandpay::Array{Float64,3}
 	function ReservesModel(compuparams::ComputationParams, econparams::EconParams)
-		grids::ModelGrids=makegrids(compuparams, econparams)
+		grids=ModelGrids(compuparams, econparams)
 		valuepay=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		valuedefault=Array{Float64}(undef, compuparams.resnum, compuparams.ynum, 2)
 		bondprice=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.ynum, 2)
@@ -132,8 +136,10 @@ mutable struct SolverParams
 	policiesout::Bool
 	# Tolerances
 	valtol::Float64 
+	# Boolean for safe, debugging checks
+	debugbool::Bool
 	function SolverParams(updatespeed=0.25, startiternum=0, iterprint=25, itermax=1001,
-							intermediatesave=2000, policiesout=false, valtol=1e-05)
+							intermediatesave=2000, policiesout=false, valtol=1e-05, debugbool=false)
 		new(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol)
 	end
 end

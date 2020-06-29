@@ -11,7 +11,7 @@ function modelinitialize!(model::ReservesModel)
 	fill!(model.bondprice,(llambda+coupon)/(rfree+llambda))
 	""" Initialize Value if default which depends only on Reserves, output and regime. 
 	Assume constant consumption equivalent. This will be average of 
-	current income and average default incoms plus return on reserves """
+	current income and average default income plus return on reserves """
 	# First reserves, then output, then mshock (recall mshock to ZERO when default), finally regime
 	broadcast!( +, model.valuedefault, model.grids.reserves*rfree, 
 				reshape( rfree/(1.0+rfree-yrho).*model.grids.ydefault, 1, model.compuparams.ynum), 

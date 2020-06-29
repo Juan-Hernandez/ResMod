@@ -1,19 +1,22 @@
 function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), parallelbool=true)
 # 0. Preliminaries
 # 0.0 Unpack counters, parameters and booleans
-	resiternum::Int64=solverparams.startiternum
-	iterprint::Int64=solverparams.iterprint 
-	itermax::Int64=solverparams.itermax 
-	intermediatesave::Int64=solverparams.intermediatesave
-	policiesout::Bool=solverparams.policiesout
-	updatespeed::Float64=solverparams.updatespeed
-	printbool::Bool=iterprint!=0
+	# 0.0.1 Unpack parameters
 	debtnum::Int64=model.compuparams.debtnum
 	resnum::Int64=model.compuparams.resnum
 	ynum::Int64=model.compuparams.ynum
 	mnum::Int64=model.compuparams.mnum
 	regimenum::Int64=size(model.grids.regimetrans,1)
 	exonum::Int64=regimenum*ynum
+	updatespeed::Float64=solverparams.updatespeed
+	iterprint::Int64=solverparams.iterprint 
+	itermax::Int64=solverparams.itermax 
+	intermediatesave::Int64=solverparams.intermediatesave
+	debugbool::Bool=solverparams.debugbool
+	# 0.0.2 Intitialize counters and booleans
+	resiternum::Int64=solverparams.startiternum
+	policiesout::Bool=solverparams.policiesout
+	printbool::Bool=iterprint!=0
 # 0.1 Preallocate Arrays 
 	# 0.1.1 Holder for new value functions and policies
 	newbondprice=Array{Float64}(undef, debtnum, resnum, ynum, regimenum)
@@ -44,8 +47,8 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 	tempry=Array{Float64}(undef, resnum, ynum) 
 	temprr=Array{Float64}(undef, resnum, resnum)
 	tempryw=Array{Float64}(undef, resnum, ynum, regimenum) 
-    reservesmaxtemp=Array{Float64}(undef, 1, resnum)
-    reservesidtemp=Array{CartesianIndex{2}}(undef, 1, resnum)
+	reservesmaxtemp=Array{Float64}(undef, 1, resnum)
+	reservesidtemp=Array{CartesianIndex{2}}(undef, 1, resnum)
 # 0.2. Initialize values 
 	# 0.2.1 Set initial values for error
 	valuegap::Float64=10.0*solverparams.valtol
@@ -59,8 +62,8 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 	defaultflowutility=defaultflowutility.^(1-model.econparams.ggamma)./(1-model.econparams.ggamma).*(1.0-model.econparams.bbeta)  
 # 0.3 Main loop
 	# Preprint and intialize time counter
-    printbool && println("        valuegap         |        pricegap         |   iternum  | time (sec) |")
-    starttime=time()
+	printbool && println("        valuegap         |        pricegap         |   iternum  | time (sec) |")
+	starttime=time()
 	# While condition    
 	while resiternum<itermax && (max(valuegap, pricegap, defaultgap)>=solverparams.valtol || !policiesout)
 # 1. Output and update controls
@@ -83,8 +86,8 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 
 # 2. Expectation over exogenous varaibles
 		mexpectation!(tempdryw, model.valuepay, model.grids.mmass)
-		ywexpectation!(expectedvaluepay, tempdryw, # here tempdry has the expectation over mshock 
-							model.grids.ytrans, model.grids.regimetrans,model.econparams.bbeta,tempdry)
+		ywexpectation!(expectedvaluepay, tempdryw, # here tempdryw has the expectation over mshock 
+							model.grids.ytrans, model.grids.regimetrans, model.econparams.bbeta, tempdry)
 		
 # 3. update value of default
 		defaultgap=solvedefaultvalue!(model, expectedvaluepay, defaultflowutility, newvaluedefault, 
@@ -112,9 +115,10 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 			[model.policies.reservesindefault[:, iy, ir] for iy=1:ynum, ir=1:regimenum], # Input: reserves choice in default from 2.
 			[cld(iyr, ynum) for iyr=1:exonum], # Input: regimenum
 			Iterators.repeated( solverparams.valtol, exonum), Iterators.repeated( model.econparams, exonum), Iterators.repeated( model.compuparams, exonum), 
-			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum) 
+			Iterators.repeated( model.grids, exonum), Iterators.repeated(policiesout, exonum), Iterators.repeated(debugbool, exonum) 
 			; distributed=parallelbool) # This last line switches from serial to parallel computation
 # 5. Find new price: take expectation over regime and output
+		debugbool && minimum(sdata(bondcashflow))<0.0 && error("negative cashflow")
 		if model.econparams.ggammalender!=0
 			# findnewprice!(newbondprice, # Output
 			# 				sdata(bondcashflow), model.bondprice, model.grids::ModelGrids, # Inputs
@@ -122,7 +126,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 			# 				tempdr) # Pre allocated temps
 			findnewpriceCARA!(newbondprice, # Output
 						sdata(bondcashflow), model.grids, # Inputs
-						1.0+model.econparams.rfree, model.econparams.ggammalender, # Inputs
+						1.0+model.econparams.rfree, model.econparams.ggammalender, debugbool, # Inputs
 						tempdrmyw, tempdryw, tempdry) # preallocated temps
 		else
 			mexpectation!(tempdryw, sdata(bondcashflow), model.grids.mmass)
@@ -130,15 +134,19 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),
 							tempdry)
 		end
+
 # 6. Find gaps and update 
 	# 6.1 Value function gap
+		debugbool && (valmin,valmax)=extrema(newvaluepay)
 		axpy!(-1.0, newvaluepay, model.valuepay)
 		maximum!(view(reservesmaxtemp,1:1), abs.(model.valuepay))
-		valuegap=reservesmaxtemp[1]/(1-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
+		valuegap=reservesmaxtemp[1]/(1.0-model.econparams.bbeta) # Because for higher beta changes in V are more meaningful
 	# 6.2 Value function update
 		setindex!(model.valuepay, newvaluepay, :)
 	# 6.3 Price gap 
 		# Cannot do the same, old price cannot be overwritten because of updatespeed. 
+		debugbool && (pricemin,pricemax)=extrema(newbondprice)
+		debugbool && pricemin<0.0 && error("negative newbondprice")
 		setindex!(tempdryw, newbondprice, :)	# Now tempdryw also holds new bond price
 		axpy!(-1.0, model.bondprice, tempdryw )
 		maximum!(view(reservesmaxtemp,1:1), abs.(tempdryw))
@@ -147,26 +155,29 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 		# No need for scal, use axpby! BLAS.scal!(debtnum*resnum*ynum*regimenum, 1.0-updatespeed, model.bondprice, 1 )
 		axpby!(updatespeed, newbondprice, 1.0-updatespeed, model.bondprice )
 	# 6.5 Policies update 
-	    if policiesout
+		if policiesout
 			setindex!(model.policies.debt, debtpolicy, :)
 			setindex!(model.policies.reserves, reservespolicy, :)
 			setindex!(model.policies.default, BitArray(defaultpolicy), :)
 		end		
 # 7. Intermediate results 
 	# 7.1 Print intermediate output
-    	if printbool && mod1(resiternum,iterprint)==iterprint
-	    	print("       ")
-		    show(IOContext(stdout, :compact=> true), valuegap)
-	    	print("        |       ")
-	    	show(IOContext(stdout, :compact=> true), 100.0*pricegap) 
-	    	print("       |     ")
-	    	show(IOContext(stdout, :compact=> true), resiternum)
-	    	print("    | ")
-	    	show(IOContext(stdout, :compact=> true), time()-starttime)
-	    	println("  |")
-	    	
-	    end
-    # 7.2 Save intermediate step
+		if printbool && mod1(resiternum,iterprint)==iterprint
+			print("       ")
+			show(IOContext(stdout, :compact=> true), valuegap)
+			print("        |       ")
+			show(IOContext(stdout, :compact=> true), 100.0*pricegap) 
+			print("|     ")
+			show(IOContext(stdout, :compact=> true), resiternum)
+			print("    | ")
+			show(IOContext(stdout, :compact=> true), time()-starttime)
+			print("	|	")
+			debugbool && show(IOContext(stdout, :compact=> true), [valmin,valmax])
+			debugbool && print("	|	")
+			debugbool && show(IOContext(stdout, :compact=> true), [pricemin,pricemax])
+			debugbool && println("	|")
+		end
+	# 7.2 Save intermediate step
 		if mod1(resiternum,intermediatesave)==intermediatesave
 			jldopen("debugmodels.jld", "w") do file
 				write(file, "basemodel", model)
@@ -182,15 +193,15 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 
 # 8. Print final results and return
 	if printbool && resiternum%iterprint!=0 # Print last iteration
-    	print("       ")
-	    show(IOContext(stdout, :compact=> true), valuegap)
-    	print("        |       ")
-    	show(IOContext(stdout, :compact=> true), 100.0*pricegap) 
-    	print("       |     ")
-    	show(IOContext(stdout, :compact=> true), resiternum)
-    	print("    |   ")
-    	show(IOContext(stdout, :compact=> true), time()-starttime)
-    	println("  |")
+		print("       ")
+		show(IOContext(stdout, :compact=> true), valuegap)
+		print("        |       ")
+		show(IOContext(stdout, :compact=> true), 100.0*pricegap) 
+		print("       |     ")
+		show(IOContext(stdout, :compact=> true), resiternum)
+		print("    |   ")
+		show(IOContext(stdout, :compact=> true), time()-starttime)
+		println("  |")
 	end
 	solveroutvec = [convert(Float64, resiternum),valuegap, pricegap, defaultgap]
 	return solveroutvec

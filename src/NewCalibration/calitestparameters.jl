@@ -1,6 +1,8 @@
+# 0. Output file name
+outfilename="calitest.txt"
 # 1. Fixed solver parameters
-basesolverparams=SolverParams(0.2, 0, 0, 8, 5000, false, 1e-05)
-# SolverParams(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol)
+basesolverparams=SolverParams(0.2, 0, 0, 800, 5000, false, 1e-05, false)
+# SolverParams(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol, debugbool)
 
 # 2. Fixed computation parameters
 basecompuparams=ComputationParams(
@@ -72,7 +74,7 @@ itermax=2
 		reentry=0.125	# reentry::Float64
 	# Sudden Stop Probability
 		ssfreq=24.0		# panicfrequency::Float64 -- One every 16 qu$
-		ssdur=-8.0		# panicduration::Float64 -- 8 quarter
+		ssdur=8.0		# panicduration::Float64 -- 8 quarter
 
 
 # # 5. Test: one call

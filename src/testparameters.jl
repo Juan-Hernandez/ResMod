@@ -1,14 +1,14 @@
 # 1. Computation Parameters
 basecompuparams=ComputationParams(
 	# Output Grid Lenght
-	50,		# ynum::Int64
+	51,		# ynum::Int64
 	# Debt grid parameters
 	0.0,	# debtmin::Float64
 	1.0,	# debtmax::Float64
 	41,		# debtnum::Int64
 	# Reserves grid parameters
 	0.0,		# resmin::Float64
-	1.0, 	# resmax::Float64
+	0.75, 	# resmax::Float64
 	41,		# resnum::Int64
 	# Temporary (smoothing shock parameters)
 	0.006, 	# msigma::Float64
@@ -26,13 +26,13 @@ rfree=0.01 			# 4% yearly
 llambda=0.05 		# 20 quarter year maturity
 coupon=0.01575  	# rfree + 230 b.p annualized spread
 # 2.2 Set parameter structure
-baseeconparams=EconParams(
+base1econparams=EconParams(
 	# Consumer
 	bbeta*(1.0+growth)^(1-ggamma),				# bbeta::Float64
 	ggamma,										# ggamma::Int64;  		# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 	# Risk free rate, lenders risk aversion and mean wealth
 	(rfree-growth)/(1.0+growth),		 		# rfree::Float64 		# 4% yearly
-	2.0,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
+	10.0,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
 	1.5,										# wealthmean::Float64	# To calibrate with risk premium									
 	# Bond Maturity and coupon
 	(llambda+growth)/(1.0+growth), 				# llambda::Float64 		# 5 year avg maturity (6% avg quarterly debt service)
@@ -56,14 +56,14 @@ baseeconparams=EconParams(
 	24.0, #19.5122, 	# panicfrequency::Float64 -- One every 24 quarters (25% of the time in panic)
 	8.0   # panicduration::Float64 -- 8 quarters
 	)
-
+baseeconparams=EconParams(0.9848484848484849, 2, 0.0034773969200198717, 2.0, 1.0, 0.056135121708892205, 0.0096148782911078, 0.7584, 0.0982, 0.12, -0.3375, 0.44540229885057475, 0.125, 24.0, 8.0)
 # 3. Set solver parameters
 basesolverparams=SolverParams(
 	0.2, 	# updatespeed::Float64 		# 0.25 generates some convergence problems.
 	0, 		# startiternum::Int64
 	1,		# interprint::Int64 
-	4,	# itermax::Int64
-	3, 	# intermediatesave::Int64
-	true,	# policiesout::Bool
+	800,	# itermax::Int64
+	1000, 	# intermediatesave::Int64
+	false,	# policiesout::Bool
 	1e-5, 	# valtol::Float64 
 	)

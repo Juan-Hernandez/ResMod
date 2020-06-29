@@ -2,7 +2,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 							 debtpolicy::AbstractArray{Int64,3}, reservespolicy::AbstractArray{Int64,3}, defaultpolicy::AbstractArray{Bool,3}, #Outputs
 							 expvalue::Array{Float64,2}, cashinhandpay::Array{Float64,2}, bondprice::Array{Float64,2},
 							 valuedefault::Array{Float64,1}, defaultreservesoptim::Array{Int64,1}, regime::Int64, valtol::Float64,
-							 econparams::EconParams, compuparams::ComputationParams, grids::ModelGrids, policiesout::Bool)
+							 econparams::EconParams, compuparams::ComputationParams, grids::ModelGrids, policiesout::Bool, debugbool::Bool)
 """	This function returns updated array of value (current debt,reserves and m), policies: next debt, 
 	reserves and default (curr debt, res, m) for a fixed output and regime (output preallocation is done here),
 	taking as input expected continuation value, cash in hand if pay, current bondprice matrix (future debt and reserves)
@@ -64,19 +64,22 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
         		thresdefault[1]=true							# Always default
         		smallestMnodefdebt=0							# Default for all m-shocks
     		else
-				# 3.1-2 GGQ algorithm.
+				# 3.1 GGQ algorithm.
 				thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
 								consexm, expvalue, grids.mextremes,		# Array inputs
-								econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum,	# Scalar inputs
+								econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum, debugbool,	# Scalar inputs
 	                            valuesatm)			# Temporary Array inputs 
 				# Here thresholds were merged for all future reserves.
-				# 3.3 Enhance threshold with default decision
+				debugbool && any(diff(thresholds[1:thresnum]).<0.0) && error("GGQthresholds: ", thresholds[1:thresnum], ". b, a,: ", idebt, " , ", ires, ". Diffthres: ", diff(thresholds[1:thresnum]) )
+				# 3.2 Enhance threshold with default decision
 				(thresnum, smallestMnodefdebt)=defaultthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs
 									expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, valtol,
 									compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes[1],
 									interimnewthresholds, interimthrespolicy)
+				debugbool && any(diff(thresholds[1:thresnum]).<0.0) && error("DEFthresholds: ", thresholds[1:thresnum], ". b, a,: ", idebt, " , ", ires )
+
 			end	
-			# 3.4 Check Sudden Stop impact
+			# 3.3 Check Sudden Stop impact
 			relevantss=false
 			if regime==2
 				if (smallestMnodefdebt!=0) && (smallestMnodefdebt>grids.debtmaxss[idebt])
@@ -89,17 +92,17 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
                             	expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, grids.debtmaxss[idebt],
                             	valtol, compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes,
 								compuparams.resnum, interimnewthresholds, interimthrespolicy, interimthresnum)
+					debugbool && any(diff(thresholds[1:thresnum]).<0.0) && error("SSthresholds: ", thresholds[1:thresnum], ". b, a,: ", idebt, " , ", ires )
 				end
 			end
-			# 3.5 Integration
+			# 3.4 Integration
 			integratethresholds!(smallvalgrid,	smallcashflowgrid, smallmassgrid,# Outputs
 									thresholds, threspolicy, thresnum, thresdefault,
 									grids.mextremes, grids.mmidpoints, bondprice, consexm, expvalue,
-									valuedefault[ires], econparams)
+									valuedefault[ires], econparams, debugbool)
 			@inbounds newvaluepaydrm[idebt, ires, 1:mnum]=smallvalgrid
-
 			@inbounds bondcashflow[idebt, ires, 1:mnum]=smallcashflowgrid
-			# 3.6 Get policies on grid.
+			# 3.5 Get policies on grid.
 			if policiesout
 				getpolicies!( smallpolicygrid, smalldefaultgrid,
 								thresholds, threspolicy, thresnum, thresdefault,
