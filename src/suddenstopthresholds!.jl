@@ -39,7 +39,10 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
 					tempthres=(bbeta-1.0)/vdiff-consexm[idftdebt, idftres]
 					# Normalized utility
 				end
+				# Keep smallest m 
 				minthres>tempthres && (minthres=tempthres)
+				# Exit quickly
+				minthres<mextremes[1] && break
 			end
 		end
 	end
@@ -52,27 +55,27 @@ function suddenstopthresholds!(thresholds::Array{Float64,1}, threspolicy::Array{
 	# Enter only if Sudden Stop is Relevant
 	if relevantss 
 		# Again no default above threshold, append the rest. Default always below,
-		interimnewthresholds[1]=min(minthres, mextremes[end])
-		interimthrespolicy[1, 1]=1
-		interimthrespolicy[1, 2]=defresoptim
+		@inbounds interimnewthresholds[1]=min(minthres, mextremes[end])
+		@inbounds interimthrespolicy[1, 1]=1
+		@inbounds interimthrespolicy[1, 2]=defresoptim
 		interimthresnum=1
-		thresdefault[1]=true 	# Default on first interval. There can be no other default,
+		@inbounds thresdefault[1]=true 	# Default on first interval. There can be no other default,
 								# because default without SS implies default with SS
 								# given that at this point continuation value of repayment is the same.
 		# Append the other intervals, no default
 		# toappend=findfirst(x->(x>interimnewthresholds[1]), thresholds[1:thresnum])
 		toappend=findfirst(thresholds[1:thresnum].>interimnewthresholds[1])
 		if toappend!=nothing
-			interimthresnum=thresnum-toappend+2
-			interimnewthresholds[2:interimthresnum]=thresholds[toappend:thresnum]
-			interimthrespolicy[2:interimthresnum, 1]=threspolicy[toappend:thresnum, 1]
-			interimthrespolicy[2:interimthresnum, 2]=threspolicy[toappend:thresnum, 2]
-			thresdefault[2:interimthresnum]=thresdefault[toappend:thresnum] # No default again    
+			@inbounds interimthresnum=thresnum-toappend+2
+			@inbounds interimnewthresholds[2:interimthresnum]=thresholds[toappend:thresnum]
+			@inbounds interimthrespolicy[2:interimthresnum, 1]=threspolicy[toappend:thresnum, 1]
+			@inbounds interimthrespolicy[2:interimthresnum, 2]=threspolicy[toappend:thresnum, 2]
+			@inbounds thresdefault[2:interimthresnum]=thresdefault[toappend:thresnum] # No default again    
 		end
 		thresnum=interimthresnum
-		thresholds[1:thresnum]=interimnewthresholds[1:thresnum]
-		threspolicy[1:thresnum, 1]=interimthrespolicy[1:thresnum, 1]
-		threspolicy[1:thresnum, 2]=interimthrespolicy[1:thresnum, 2]
+		@inbounds thresholds[1:thresnum]=interimnewthresholds[1:thresnum]
+		@inbounds threspolicy[1:thresnum, 1]=interimthrespolicy[1:thresnum, 1]
+		@inbounds threspolicy[1:thresnum, 2]=interimthrespolicy[1:thresnum, 2]
 	end
 	return (thresnum, relevantss)
 end # Function end

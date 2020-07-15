@@ -1,4 +1,4 @@
-function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), parallelbool=true)
+function solvereservesmodel!(model::ReservesModel, solverparams::SolverParams, parallelbool::Bool)
 # 0. Preliminaries
 # 0.0 Unpack counters, parameters and booleans
 	# 0.0.1 Unpack parameters
@@ -6,7 +6,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 	resnum::Int64=model.compuparams.resnum
 	ynum::Int64=model.compuparams.ynum
 	mnum::Int64=model.compuparams.mnum
-	regimenum::Int64=size(model.grids.regimetrans,1)
+	regimenum::Int64=model.econparams.regimenum
 	exonum::Int64=regimenum*ynum
 	updatespeed::Float64=solverparams.updatespeed
 	iterprint::Int64=solverparams.iterprint 
@@ -37,7 +37,6 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 	end
 	# 0.1.2 Other outputs and temporary storage arrays
 	# 0.1.2.1 Outputs
-	solveroutvec=Array{Float64}(undef, 4) # Holds gaps and iternum, returned by as solvereservesmodel!
 	expectedvaluepay=Array{Float64}(undef, debtnum,resnum,ynum,regimenum) 	# Holder for exogenous expectation
 	# 0.1.2.2 Temporary arrays
 	tempdr=Array{Float64}(undef, debtnum, resnum)
@@ -119,7 +118,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 			; distributed=parallelbool) # This last line switches from serial to parallel computation
 # 5. Find new price: take expectation over regime and output
 		debugbool && minimum(sdata(bondcashflow))<0.0 && error("negative cashflow")
-		if model.econparams.ggammalender!=0
+		if model.econparams.ggammalender!=0.0
 			# findnewprice!(newbondprice, # Output
 			# 				sdata(bondcashflow), model.bondprice, model.grids::ModelGrids, # Inputs
 			# 				1.0+model.econparams.rfree, model.econparams.ggammalender, model.econparams.wealthmean, # Inputs
@@ -133,6 +132,10 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 			ywexpectation!(newbondprice, tempdryw, 
 							model.grids.ytrans, model.grids.regimetrans, 1.0/(1.0+model.econparams.rfree),
 							tempdry)
+			for idprice=1:length(newbondprice)
+				debugbool && newbondprice[idprice]<0.0 && error("Negative price")
+				@inbounds newbondprice[idprice]<1e-8 && (newbondprice[idprice]=0.0)
+			end
 		end
 
 # 6. Find gaps and update 
@@ -171,11 +174,11 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 			show(IOContext(stdout, :compact=> true), resiternum)
 			print("    | ")
 			show(IOContext(stdout, :compact=> true), time()-starttime)
-			print("	|	")
+			debugbool && print("	|	")
 			debugbool && show(IOContext(stdout, :compact=> true), [valmin,valmax])
 			debugbool && print("	|	")
 			debugbool && show(IOContext(stdout, :compact=> true), [pricemin,pricemax])
-			debugbool && println("	|")
+			println("	|")
 		end
 	# 7.2 Save intermediate step
 		if mod1(resiternum,intermediatesave)==intermediatesave
@@ -203,8 +206,7 @@ function solvereservesmodel!(model::ReservesModel, solverparams=SolverParams(), 
 		show(IOContext(stdout, :compact=> true), time()-starttime)
 		println("  |")
 	end
-	solveroutvec = [convert(Float64, resiternum),valuegap, pricegap, defaultgap]
-	return solveroutvec
+	return 	resiternum, valuegap, pricegap, defaultgap
 end # Function End
 
 

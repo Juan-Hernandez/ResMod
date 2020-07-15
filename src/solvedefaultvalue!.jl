@@ -26,7 +26,7 @@ function solvedefaultvalue!(model::ReservesModel, expectedvaluepay::Array{Float6
         # gemm!('N', 'T', (1-model.econparams.reentry)*model.econparams.bbeta*model.econparams.ss2ss, 
         # 	view(model.valuedefault, :, :, 2), model.grids.ytrans, 1.0, view(interimdefaultvalue, :, :, 2) )
 
-        regimenum=size(model.grids.regimetrans,1)
+        regimenum=model.econparams.regimenum
         for iregime=1:regimenum
             # update to continuation value, including reentry
             axpy!(model.econparams.reentry, view(expectedvaluepay,1,:,:,iregime), view( interimdefaultvalue, :, :, iregime) )

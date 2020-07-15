@@ -19,18 +19,20 @@ modelinitialize!(basemodel)
 
 # 3. Solve model
 # 3.1 Solve routine and extract gaps 
-solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
-# # 3.1.1 Profiling
-# basesolverparams.itermax=3
-# Profile.@profile solveroutvec=solvereservesmodel!(basemodel, basesolverparams)	
+(resiternum, valuegap, pricegap, defaultgap)=solvereservesmodel!(basemodel, basesolverparams, true)
+# 3.1.1 Solve again at lower update speed (if converged before, will exit quickly)
+basesolverparams.updatespeed=basesolverparams.updatespeed*0.1
+basesolverparams.startiternum=floor(Int64, resiternum)
+basesolverparams.itermax=basesolverparams.itermax+800
+basesolverparams.intermediatesave=basesolverparams.intermediatesave+800
+basesolverparams.policiesout=false
+(resiternum, valuegap, pricegap, defaultgap)=solvereservesmodel!(basemodel, basesolverparams, true)
 
-# 3.2 Extract gaps
-resiternum = floor(Int64, solveroutvec[1])
-valuegap = solveroutvec[2]
-pricegap = solveroutvec[3]
-defaultgap = solveroutvec[4]
+# # 3.1.2 Profiling
+# basesolverparams.itermax=3
+# Profile.@profile solvereservesmodel!(basemodel, basesolverparams)	
  
-# 3.3 Save solved model
+# 3.2 Save solved model
 jldopen(filename,"w") do file
 	write(file, "basemodel", basemodel)
 	write(file, "basesolverparams", basesolverparams)

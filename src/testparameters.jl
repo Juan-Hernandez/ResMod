@@ -26,13 +26,13 @@ rfree=0.01 			# 4% yearly
 llambda=0.05 		# 20 quarter year maturity
 coupon=0.01575  	# rfree + 230 b.p annualized spread
 # 2.2 Set parameter structure
-base1econparams=EconParams(
+baseeconparams=EconParams(
 	# Consumer
 	bbeta*(1.0+growth)^(1-ggamma),				# bbeta::Float64
 	ggamma,										# ggamma::Int64;  		# HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 	# Risk free rate, lenders risk aversion and mean wealth
 	(rfree-growth)/(1.0+growth),		 		# rfree::Float64 		# 4% yearly
-	10.0,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
+	0.0,										# ggamalender::Float64 	# Same as borrower. This CANNOT be changed to values different from 2.
 	1.5,										# wealthmean::Float64	# To calibrate with risk premium									
 	# Bond Maturity and coupon
 	(llambda+growth)/(1.0+growth), 				# llambda::Float64 		# 5 year avg maturity (6% avg quarterly debt service)
@@ -49,14 +49,17 @@ base1econparams=EconParams(
 	0.0982, 	# logOutputSigma::Float64
 	0.12,		# govtspending::Float64
 	# Default output cost parameters
-	-0.455,		# defcost1::Float64
+	-0.4,	#-0.455,		# defcost1::Float64
 	0.59195, 	# defcost2::Float64
 	0.125, 		# reentry::Float64
-	# Sudden Stop Probability
-	24.0, #19.5122, 	# panicfrequency::Float64 -- One every 24 quarters (25% of the time in panic)
-	8.0   # panicduration::Float64 -- 8 quarters
+	# Regime transition parameters
+	3,		# regimenum::Int64
+	24.0,	# safeduration::Float64		# Expected duration of 6 years.
+	6.0,	# riskduration::Float64		# Expected time in risk regime one and a half years
+	4.0,	# panicduration::Float64	# One year of sudden stop
+	16.0	# panicfrequency::Float64 	# One every 8 years.  (6.25% of the time in panic)
 	)
-baseeconparams=EconParams(0.9848484848484849, 2, 0.0034773969200198717, 2.0, 1.0, 0.056135121708892205, 0.0096148782911078, 0.7584, 0.0982, 0.12, -0.3375, 0.44540229885057475, 0.125, 24.0, 8.0)
+# baseeconparams=EconParams(0.9848484848484849, 2, 0.0034773969200198717, 2.0, 1.0, 0.056135121708892205, 0.0096148782911078, 0.7584, 0.0982, 0.12, -0.3375, 0.44540229885057475, 0.125, 24.0, 8.0)
 # 3. Set solver parameters
 basesolverparams=SolverParams(
 	0.2, 	# updatespeed::Float64 		# 0.25 generates some convergence problems.
@@ -66,4 +69,5 @@ basesolverparams=SolverParams(
 	1000, 	# intermediatesave::Int64
 	false,	# policiesout::Bool
 	1e-5, 	# valtol::Float64 
+	false	# debugbool::Bool
 	)

@@ -5,11 +5,8 @@ modelinitialize!(innermodel)
 
 # 2.3. # Call solver routine
 
-solveroutvec=solvereservesmodel!(innermodel, solverparams, false)	
-resiternum = floor(Int64, solveroutvec[1])
-valuegap = solveroutvec[2]
-pricegap = solveroutvec[3]
-defaultgap = solveroutvec[4]
+(resiternum,valuegap,pricegap,defaultgap)=solvereservesmodel!(innermodel, solverparams, false)	
+
 # 3. Simulate model with seed=true
 
 innersimul=ModelSimulation(101000)
@@ -23,7 +20,7 @@ flag=getmoments!(innermoments, innersimul, innermodel.grids, 1000) # burnin 1000
 calout=open(outfilename,"a")
 	show(IOContext(calout, :compact => true), econparams.bbeta)
 	print(calout, " |  ")
-	show(IOContext(calout, :compact => true), econparams.ggammalender)
+	show(IOContext(calout, :compact => true), econparams.riskduration)
 	print(calout, " |  ")
 	show(IOContext(calout, :compact => true), econparams.defcost1)
 	print(calout, " |  ")

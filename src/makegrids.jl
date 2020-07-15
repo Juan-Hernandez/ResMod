@@ -40,7 +40,13 @@ function makegrids(computationparameters::ComputationParams, econparams::EconPar
 	reserves::Array{Float64,1}=range(computationparameters.resmin, stop=computationparameters.resmax, length=computationparameters.resnum)
 
 # 5. Regime transition:
-	regimetrans::Array{Float64,2}= [1.0-1.0/econparams.panicfrequency 1.0/econparams.panicfrequency; 1.0/econparams.panicduration 1.0-1.0/econparams.panicduration]
+	safd::Float64=econparams.safeduration
+	risd::Float64=econparams.riskduration
+	pand::Float64=econparams.panicduration
+	nu::Float64=(safd+risd)/pand/(econparams.panicfrequency-1.0)
+	regimetrans::Array{Float64,2} = [	1.0-1.0/safd	1.0/safd 		0				;
+										(1.0-nu)/risd	1.0-1.0/risd	nu/risd			;
+										1.0/pand		0				1.0-1.0/pand	]
 	minimum(regimetrans)<0.0 && error("Negative regime transiton probability")
 
 # 6. Return 

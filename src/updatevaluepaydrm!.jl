@@ -56,19 +56,19 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 			# Consumption excluding M given future reserves, future debt.
 			broadcast!(+, consexm, cashinhandpay[idebt,ires], -reshape(grids.reserves,1,:)/(1.0+econparams.rfree), consexm)	# Chanded transpose to reshape for speed. If no improvement, try ./
 			# 3.0  	# Check for positive consumption options, if not, default is sure and return only one threhold
-		    if maximum(consexm)+grids.mextremes[end]<1e-13 # default is sure
-        		thresnum=1
-        		threspolicy[1,1]=1 								# Default debt
-        		threspolicy[1,2]=defaultreservesoptim[ires] 	# Minimum reserves (will be changed to default reserves in defaulthresholds!.jl)
-        		thresholds[1]=grids.mextremes[end] 				# Threshold is the biggest     
-        		thresdefault[1]=true							# Always default
-        		smallestMnodefdebt=0							# Default for all m-shocks
-    		else
+			if maximum(consexm)+grids.mextremes[end]<1e-13 # default is sure
+				thresnum=1
+				@inbounds threspolicy[1,1]=1 								# Default debt
+				@inbounds threspolicy[1,2]=defaultreservesoptim[ires] 	# Minimum reserves (will be changed to default reserves in defaulthresholds!.jl)
+				@inbounds thresholds[1]=grids.mextremes[end] 				# Threshold is the biggest     
+				@inbounds thresdefault[1]=true							# Always default
+				smallestMnodefdebt=0							# Default for all m-shocks
+			else
 				# 3.1 GGQ algorithm.
 				thresnum=GGQthresholds!(thresholds, threspolicy, 		# Outputs
 								consexm, expvalue, grids.mextremes,		# Array inputs
 								econparams.bbeta, econparams.ggamma, compuparams.debtnum, compuparams.resnum, debugbool,	# Scalar inputs
-	                            valuesatm)			# Temporary Array inputs 
+								valuesatm)			# Temporary Array inputs 
 				# Here thresholds were merged for all future reserves.
 				debugbool && any(diff(thresholds[1:thresnum]).<0.0) && error("GGQthresholds: ", thresholds[1:thresnum], ". b, a,: ", idebt, " , ", ires, ". Diffthres: ", diff(thresholds[1:thresnum]) )
 				# 3.2 Enhance threshold with default decision
@@ -81,7 +81,7 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 			end	
 			# 3.3 Check Sudden Stop impact
 			relevantss=false
-			if regime==2
+			if regime==econparams.regimenum # Sudden stop only on last regime
 				if (smallestMnodefdebt!=0) && (smallestMnodefdebt>grids.debtmaxss[idebt])
 					# From defaultthresholds smallestMnodefdebt is the index of the debt choice at the smallest M-shock 
 					# consistent with no default. If smallestMnodefdebt=0 then default for all mshocks and no need to 
@@ -89,8 +89,8 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 					# optimal without new lending, hence thresholds stay the same. 
 					# Else, find new thresholds
 					(thresnum,relevantss)=suddenstopthresholds!(thresholds, threspolicy, thresnum, thresdefault, # Outputs	
-                            	expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, grids.debtmaxss[idebt],
-                            	valtol, compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes,
+								expvalue, valuedefault[ires], defaultreservesoptim[ires], consexm, grids.debtmaxss[idebt],
+								valtol, compuparams.thrmin, econparams.ggamma, econparams.bbeta, grids.mextremes,
 								compuparams.resnum, interimnewthresholds, interimthrespolicy, interimthresnum)
 					debugbool && any(diff(thresholds[1:thresnum]).<0.0) && error("SSthresholds: ", thresholds[1:thresnum], ". b, a,: ", idebt, " , ", ires )
 				end
@@ -107,11 +107,11 @@ function updatevaluepaydrm!( newvaluepaydrm::AbstractArray{Float64,3}, bondcashf
 				getpolicies!( smallpolicygrid, smalldefaultgrid,
 								thresholds, threspolicy, thresnum, thresdefault,
 								grids.mmidpoints, mnum)
-				debtpolicy[idebt,ires,:]=smallpolicygrid[:,1]
-				reservespolicy[idebt,ires,:]=smallpolicygrid[:,2]
-				setindex!(defaultpolicy, smalldefaultgrid, idebt, ires, :)
+				@inbounds debtpolicy[idebt,ires,:]=smallpolicygrid[:,1]
+				@inbounds reservespolicy[idebt,ires,:]=smallpolicygrid[:,2]
+				@inbounds setindex!(defaultpolicy, smalldefaultgrid, idebt, ires, :)
 			end
-	 	end # Finish loop over current debt
+		end # Finish loop over current debt
 	end # Finish loop over current reserves
 	nothing
 end # Function end

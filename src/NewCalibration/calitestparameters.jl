@@ -1,5 +1,5 @@
 # 0. Output file name
-outfilename="calitest.txt"
+outfilename="cali3reg.txt"
 # 1. Fixed solver parameters
 basesolverparams=SolverParams(0.2, 0, 0, 800, 5000, false, 1e-05, false)
 # SolverParams(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol, debugbool)
@@ -37,12 +37,12 @@ basecompuparams=ComputationParams(
 # 3.3 Three parameter vector [beta, par1, par2]
 # calsequence=SobolSeq(3, [0.9864, 0.0, 0.3], [0.992, 0.08, 0.94])
 
-# 3.4 Four parameter vector [beta, gammalender, par1, par2]
-calsequence=SobolSeq(4, [0.986, 1.0, 0.04, 0.3 ], [0.993, 5.0, 0.08, 0.85])
+# 3.4 Four parameter vector [beta, riskdur, par1, par2]
+calsequence=SobolSeq(4, [0.986, 2.0, 0.04, 0.3 ], [0.993, 10.0, 0.08, 0.85])
 
 # 3.5 Itereation control and output print
 iterstart=0
-itermax=2
+itermax=4
 
 # 4. Economic parameters
 # 4.1 Metaparameters
@@ -59,7 +59,7 @@ itermax=2
 		ggamma=2		# ggamma::Int64;  # This cannot change. Will destroy threshold solution. 
 	# Risk free rate, lenders risk aversion and mean wealth
 		rfree=0.01		# rfree::Float64
-		# gammalender=parvec[2]						# gammalender::Float64  
+		gammalender=0.0	# gammalender::Float64  
 		wealthmean=1.0	# wealthmean::Flotat64   
 	# Bond Maturity and coupon
 		llambda=0.05 	# llambda::Float64	# 20 quarter year maturity (6% avg quarterly debt service)
@@ -73,8 +73,10 @@ itermax=2
 		# defcost2=(parvec[4]-parvec[3])/pivot		# defcost2::Float64     
 		reentry=0.125	# reentry::Float64
 	# Sudden Stop Probability
-		ssfreq=24.0		# panicfrequency::Float64 -- One every 16 qu$
-		ssdur=8.0		# panicduration::Float64 -- 8 quarter
+		safedur=24.0	# safeduration::Float64		# Expected duration of 6 years.
+		# riskdur=parvec[2]	# riskduration::Float64		# Expected time in risk regime one and a half years
+		panicdur=4.0	# panicduration::Float64 -- 4 quarter
+		panicfreq=16.0	# panicfrequency::Float64 -- One every 8 years 
 
 
 # # 5. Test: one call

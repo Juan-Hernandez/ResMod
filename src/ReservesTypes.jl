@@ -53,8 +53,11 @@ struct EconParams
 	defcost2::Float64
 	reentry::Float64
 	# Regime transition Probability
-	panicfrequency::Float64
+	regimenum::Int64
+	safeduration::Float64
+	riskduration::Float64
 	panicduration::Float64
+	panicfrequency::Float64
 end
 
 include("rouwenhorst.jl")
@@ -89,11 +92,11 @@ struct ModelPolicies
 	reserves::Array{Int64,5}
 	default::BitArray{5}
 	# lenderchoice::Array{Float64,5}		# This is weird, mu = q*b'/W, is a float and not a policy. Required every iteration.
-	function ModelPolicies(compuparams::ComputationParams)
-		reservesindefault=Array{Int64}(undef, compuparams.resnum, compuparams.ynum, 2)
-		debt=Array{Int64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
-		reserves=Array{Int64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
-		default=BitArray(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
+	function ModelPolicies(compuparams::ComputationParams, regimenum::Int64)
+		reservesindefault=Array{Int64}(undef, compuparams.resnum, compuparams.ynum, regimenum)
+		debt=Array{Int64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, regimenum)
+		reserves=Array{Int64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, regimenum)
+		default=BitArray(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, regimenum)
 		# lenderchoice=Array{Int64}(compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
 		new(reservesindefault, debt, reserves, default)
 	end
@@ -110,10 +113,10 @@ struct ReservesModel
 	cashinhandpay::Array{Float64,3}
 	function ReservesModel(compuparams::ComputationParams, econparams::EconParams)
 		grids=ModelGrids(compuparams, econparams)
-		valuepay=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, 2)
-		valuedefault=Array{Float64}(undef, compuparams.resnum, compuparams.ynum, 2)
-		bondprice=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.ynum, 2)
-		policies=ModelPolicies(compuparams)
+		valuepay=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.mnum, compuparams.ynum, econparams.regimenum)
+		valuedefault=Array{Float64}(undef, compuparams.resnum, compuparams.ynum, econparams.regimenum)
+		bondprice=Array{Float64}(undef, compuparams.debtnum, compuparams.resnum, compuparams.ynum, econparams.regimenum)
+		policies=ModelPolicies(compuparams, econparams.regimenum)
 		cashinhandpay=broadcast( +, -(econparams.llambda+econparams.coupon)*grids.debt, 
 								reshape( grids.reserves, 1, compuparams.resnum),
 								reshape( grids.y, 1, 1, compuparams.ynum) )
@@ -138,10 +141,6 @@ mutable struct SolverParams
 	valtol::Float64 
 	# Boolean for safe, debugging checks
 	debugbool::Bool
-	function SolverParams(updatespeed=0.25, startiternum=0, iterprint=25, itermax=1001,
-							intermediatesave=2000, policiesout=false, valtol=1e-05, debugbool=false)
-		new(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol)
-	end
 end
 
 struct ModelSimulation

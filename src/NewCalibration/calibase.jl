@@ -32,7 +32,7 @@ pmap( momentsimulator!, Iterators.repeated(basecompuparams,itermax),
 		ggamma,										# ggamma::Int64;  # HAS TO BE EQUAL TO 2. This cannot change. Will destroy threshold solution.
 		# Risk free rate, lenders risk aversion and mean wealth
 		(rfree-growth)/(1.0+growth),				# rfree::Float64 		
-		parvec[2],									# ggamalender::Float64 	
+		gammalender,									# ggamalender::Float64 	
 		wealthmean,									# wealthmean::Flotat64	# To calibrate with risk premium
 		# Bond Maturity and coupon
 		(llambda+growth)/(1.0+growth), 				# llambda::Float64 		# 5 year avg maturity 
@@ -45,9 +45,12 @@ pmap( momentsimulator!, Iterators.repeated(basecompuparams,itermax),
 		2*parvec[3]-parvec[4],						# defcost1::Float64
 		(parvec[4]-parvec[3])/pivot,				# defcost2::Float64
 		reentry,									# reentry::Float64
-		# Sudden Stop Probability
-		ssfreq,										# panicfrequency::Float64 -- One every 16 quarters
-		ssdur  										# panicduration::Float64 -- 8 quarters
+		# Regime transition parameters
+		3, 											# regimenum::Int64
+		safedur,
+		parvec[2],
+		panicdur,  										# panicduration::Float64 -- 8 quarters
+		panicfreq,										# panicfrequency::Float64 -- One every 16 quarters
 		)
 	for parvec in [next!(calsequence) for id=1:itermax] ],
 	Iterators.repeated(basesolverparams,itermax), Iterators.repeated(outfilename,itermax) )	
