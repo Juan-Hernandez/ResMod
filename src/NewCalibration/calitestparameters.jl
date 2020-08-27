@@ -1,5 +1,5 @@
 # 0. Output file name
-outfilename="cali3reg.txt"
+outfilename="cali3regbig.txt"
 # 1. Fixed solver parameters
 basesolverparams=SolverParams(0.2, 0, 0, 800, 5000, false, 1e-05, false)
 # SolverParams(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol, debugbool)
@@ -38,7 +38,7 @@ basecompuparams=ComputationParams(
 # calsequence=SobolSeq(3, [0.9864, 0.0, 0.3], [0.992, 0.08, 0.94])
 
 # 3.4 Four parameter vector [beta, riskdur, par1, par2]
-calsequence=SobolSeq(4, [0.986, 2.0, 0.04, 0.3 ], [0.993, 10.0, 0.08, 0.85])
+calsequence=SobolSeq(7, [0.986, 0.04, 0.3, 16.0, 2.0, 2.0, 0.0 ], [0.993, 0.08, 0.85, 32.0, 10.0, 6.0, 1.0])
 
 # 3.5 Itereation control and output print
 iterstart=0
@@ -69,14 +69,14 @@ itermax=4
 		logysig=0.0982	# logOutputSigma::Float64
 		govspend=0.12	# govtspending::Float64
 	# Default output cost parameters
-		# defcost1=2*parvec[3]-parvec[4]			# defcost1::Float64     
-		# defcost2=(parvec[4]-parvec[3])/pivot		# defcost2::Float64     
+		# defcost1=2*parvec[2]-parvec[3]			# defcost1::Float64     
+		# defcost2=(parvec[3]-parvec[2])/pivot		# defcost2::Float64     
 		reentry=0.125	# reentry::Float64
 	# Sudden Stop Probability
-		safedur=24.0	# safeduration::Float64		# Expected duration of 6 years.
-		# riskdur=parvec[2]	# riskduration::Float64		# Expected time in risk regime one and a half years
-		panicdur=4.0	# panicduration::Float64 -- 4 quarter
-		panicfreq=16.0	# panicfrequency::Float64 -- One every 8 years 
+		# safedur=parvec[4]	# safeduration::Float64		# Expected duration of 6 years.
+		# riskdur=parvec[5]	# riskduration::Float64		# Expected time in risk regime one and a half years
+		# panicdur=parvec[6]	# panicduration::Float64 -- 4 quarter
+		# panicfreq=(parvec[4]+parvec[5])/parvec[6]/parvec[7]+1.0	# panicfrequency::Float64 -- One every 8 years 
 
 
 # # 5. Test: one call

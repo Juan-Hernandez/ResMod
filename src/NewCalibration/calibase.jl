@@ -21,7 +21,7 @@ include("calitestparameters.jl")
 # 2.1 Output file initialization
 calout=open(outfilename,"a")
 println(calout, "----------------------------------------------------------------------------------------------------------------------------------------------------")
-println(calout, "                  parvec                  |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
+println(calout, "                  EconParams                  |   debt    |  reserves  |   spravg   |   sprvar   |    defstat  |  defchoice  | sprXgrowth |   maxgap   |")
 close(calout)
 
 # 2.3 Parallel call ofer parameter comprehension 
@@ -42,15 +42,15 @@ pmap( momentsimulator!, Iterators.repeated(basecompuparams,itermax),
 		logysig,								 	# logOutputSigma::Float64
 		govspend,									# govtspending::Float64
 		# Default output cost parameters
-		2*parvec[3]-parvec[4],						# defcost1::Float64
-		(parvec[4]-parvec[3])/pivot,				# defcost2::Float64
+		2*parvec[2]-parvec[3],						# defcost1::Float64
+		(parvec[3]-parvec[2])/pivot,				# defcost2::Float64
 		reentry,									# reentry::Float64
 		# Regime transition parameters
 		3, 											# regimenum::Int64
-		safedur,
-		parvec[2],
-		panicdur,  										# panicduration::Float64 -- 8 quarters
-		panicfreq,										# panicfrequency::Float64 -- One every 16 quarters
+		parvec[4],									# safeduration::Float64 -- 6 years
+		parvec[5],									# riskduration::Float64 -- 1.5 years
+		parvec[6],  								# panicduration::Float64 -- 1 year
+		(parvec[4]+parvec[5])/parvec[6]/parvec[7]+1.0	# panicfrequency::Float64 -- One every 16 quarters
 		)
 	for parvec in [next!(calsequence) for id=1:itermax] ],
 	Iterators.repeated(basesolverparams,itermax), Iterators.repeated(outfilename,itermax) )	
