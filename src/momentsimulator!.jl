@@ -7,12 +7,9 @@ modelinitialize!(innermodel)
 
 (resiternum,valuegap,pricegap,defaultgap)=solvereservesmodel!(innermodel, solverparams, false)	
 # 2.3.1 Solve again at lower update speed (if converged before, will exit quickly)
-solverparams.updatespeed=solverparams.updatespeed*0.1
-solverparams.startiternum=floor(Int64, resiternum)
-solverparams.itermax=solverparams.itermax+800
-solverparams.intermediatesave=solverparams.intermediatesave+800
-solverparams.policiesout=false
-(resiternum, valuegap, pricegap, defaultgap)=solvereservesmodel!(basemodel, solverparams, true)
+secondsolverpar=SolverParams(solverparams.updatespeed*0.1, floor(Int64, resiternum), 0, 2*solverparams.itermax, solverparams.intermediatesave+solverparams.itermax, false, 1e-05, false)
+
+(resiternum, valuegap, pricegap, defaultgap)=solvereservesmodel!(innermodel, secondsolverpar, false)
 
 # 3. Simulate model with seed=true
 
@@ -60,8 +57,14 @@ calout=open(outfilename,"a")
 	print(calout, "  | ")
 	show(iodef, innermoments.deltaspreadXgrowth)
 	print(calout, "  | ")
+	show(iodef, resiternum )
+	println(calout, "  |")
 	show(iodef, max(valuegap,pricegap,defaultgap) )
 	println(calout, "  |")
+	show(iodef, innermoments.debt2gdpmean)
+	print(calout, "  | ")
+	show(iodef, innermoments.reserves2gdpmean)
+	print(calout, "  | ")
 close(calout)
 return nothing
 

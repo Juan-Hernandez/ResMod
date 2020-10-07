@@ -1,7 +1,7 @@
 # 0. Output file name
-outfilename="cali3regbig.txt"
+outfilename="cali3Rtest.txt"
 # 1. Fixed solver parameters
-basesolverparams=SolverParams(0.2, 0, 0, 800, 5000, false, 1e-05, false)
+basesolverparams=SolverParams(0.2, 0, 0, 80, 5000, false, 1e-05, false)
 # SolverParams(updatespeed, startiternum, iterprint, itermax, intermediatesave, policiesout, valtol, debugbool)
 
 # 2. Fixed computation parameters
@@ -37,8 +37,8 @@ basecompuparams=ComputationParams(
 # 3.3 Three parameter vector [beta, par1, par2]
 # calsequence=SobolSeq(3, [0.9864, 0.0, 0.3], [0.992, 0.08, 0.94])
 
-# 3.4 Four parameter vector [beta, riskdur, par1, par2]
-calsequence=SobolSeq(7, [0.986, 0.04, 0.3, 16.0, 2.0, 2.0, 0.0 ], [0.993, 0.08, 0.85, 32.0, 10.0, 6.0, 1.0])
+# 3.4 Seven parameter vector [beta, par1, par2, safedur, riskdur, panicdur, nu]
+calsequence=SobolSeq(7, [0.980, 0.04, 0.35, 16.0, 2.0, 2.0, 0.0 ], [0.987, 0.08, 0.85, 48.0, 10.0, 6.0, 1.0])
 
 # 3.5 Itereation control and output print
 iterstart=0
@@ -46,11 +46,10 @@ itermax=4
 
 # 4. Economic parameters
 # 4.1 Metaparameters
-	growth=0.0065		# Quarterly growth rate
+	growth=0.005		# Quarterly growth rate (HP-filtered USD-GDP/USCPI)
 	pivot=0.87 			# Pivot point for default cost 
 						# For y=51 sigma=0.098 Point--ergodic density--cumulative 
 						# prob: 0.8467--0.0270--0.0595,  0.8706--0.0418--0.1013, 0.8950--0.0598--0.1611
-	growth=0.0065 		# Avg quarterly growth
 
 
 # 4.2 Non sobol Economic parameters (pre-growth transformation)
@@ -63,10 +62,10 @@ itermax=4
 		wealthmean=1.0	# wealthmean::Flotat64   
 	# Bond Maturity and coupon
 		llambda=0.05 	# llambda::Float64	# 20 quarter year maturity (6% avg quarterly debt service)
-		coupon=0.01575  # coupon:: Float64	# rfree + 230 b.p annualized spread
+		coupon=0.016  # coupon:: Float64	# rfree + 240 b.p annualized spread
 	# Expected Output grid parameters
-		logyrho=0.7584	# logOutputRho::Float64 # gdp in USD delfact$
-		logysig=0.0982	# logOutputSigma::Float64
+		logyrho=0.770	# logOutputRho::Float64 # gdp in USD delfact$
+		logysig=0.0943	# logOutputSigma::Float64
 		govspend=0.12	# govtspending::Float64
 	# Default output cost parameters
 		# defcost1=2*parvec[2]-parvec[3]			# defcost1::Float64     

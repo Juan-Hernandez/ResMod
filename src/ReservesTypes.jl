@@ -157,12 +157,12 @@ struct ModelSimulation
 	bondspread::Array{Float64,1}
 	function ModelSimulation(per::Int64)
 		periods=per
-		debtind=Array{Int64}(undef, periods+1)
-		reservesind=Array{Int64}(undef, periods+1)
+		debtind=Array{Int64}(undef, periods)
+		reservesind=Array{Int64}(undef, periods)
 		mind=Array{Int64}(undef, periods)
 		yind=Array{Int64}(undef, periods)
 	    regime=Array{Int64}(undef, periods)
-		defaultstate=Array{Bool}(undef, periods+1)
+		defaultstate=Array{Bool}(undef, periods)
 		randomshocks=Array{Float64}(undef, periods, 4)
 		output=Array{Float64}(undef, periods)
 		bondprice=Array{Float64}(undef, periods)	
